@@ -85,17 +85,35 @@ GitHub Actions workflow untuk menjalankan automated code review.
 3. Pastikan tidak ada key yang tidak didukung (seperti `rules`)
 4. Check dokumentasi cursor-agent untuk format yang benar
 
-### Error: "Model not found"
+### Error: "Cannot use this model: [model-name]"
 
 **Penyebab:** Model yang digunakan tidak tersedia atau tidak valid.
 
 **Solusi:**
 
-1. Ganti model di workflow file:
-   - `gpt-4-turbo` (recommended)
-   - `gpt-4`
-   - `gpt-3.5-turbo`
-2. Pastikan CURSOR_API_KEY valid dan memiliki akses ke model tersebut
+1. Ganti model di workflow file dengan salah satu model yang tersedia:
+
+   - `gpt-5.2` (recommended - latest and best for code review)
+   - `gpt-5.1` (alternative)
+   - `sonnet-4.5` (Claude Sonnet - good for code review)
+   - `opus-4.5` (Claude Opus - high quality)
+   - `auto` (let Cursor choose automatically)
+   - `composer-1` (Claude Composer)
+   - `gemini-3-pro` (Google Gemini)
+   - `gpt-5.1-codex` (specialized for code)
+   - `gpt-5.1-codex-max` (best code understanding)
+
+2. **Available models list:**
+
+   ```
+   composer-1, auto, sonnet-4.5, sonnet-4.5-thinking, opus-4.5,
+   opus-4.5-thinking, gemini-3-pro, gpt-5.2, gpt-5.1, gpt-5.2-high,
+   gpt-5.1-high, gpt-5.1-codex, gpt-5.1-codex-high, gpt-5.1-codex-max,
+   gpt-5.1-codex-max-high, opus-4.1, grok
+   ```
+
+3. Pastikan CURSOR_API_KEY valid dan memiliki akses ke model tersebut
+4. Check model availability dengan menjalankan: `cursor-agent --list-models` (if available)
 
 ## Setup GitHub Secrets
 
@@ -132,7 +150,7 @@ export CURSOR_API_KEY="your-api-key"
 export GH_TOKEN="your-github-token"
 
 # Run cursor-agent
-cursor-agent --force --model "gpt-4-turbo" --output-format=text --print "Review this code"
+cursor-agent --force --model "gpt-5.2" --output-format=text --print "Review this code"
 ```
 
 ## Best Practices
