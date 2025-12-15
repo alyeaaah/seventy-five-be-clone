@@ -1,10 +1,9 @@
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
-import { IsNull, Like, Not } from "typeorm";
+import { IsNull, Not } from "typeorm";
 
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
-import { Rule } from "../entities/Rule";
 import { Player } from "../entities/Player";
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { Team } from "../entities/Team";
