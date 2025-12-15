@@ -8,7 +8,7 @@ import { IsNull, Like, Not } from "typeorm";
 
 export default class PointController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { round, point } = req.body;
     try {
       if (!round || !point) {
@@ -40,7 +40,7 @@ export default class PointController {
     }
   }
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const pointRepo = AppDataSource.getRepository(MatchPoint);
       const [data, totalRecords] = await pointRepo.findAndCount({
@@ -61,7 +61,7 @@ export default class PointController {
     }
   }
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { round, point } = req.body;
     const { uuid } = req.params;
     try {
@@ -92,7 +92,7 @@ export default class PointController {
 
 // Tournament
   async tcreate(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { round, point } = req.body;
     const { tournament_uuid } = req.params;
     try {
@@ -137,7 +137,7 @@ export default class PointController {
     }
   }
   async tlist(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid } = req.params;
     try {
       // check Tournament exists
@@ -170,7 +170,7 @@ export default class PointController {
     }
   }
   async tupdate(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { round, point } = req.body;
     const { uuid, tournament_uuid } = req.params;
     try {

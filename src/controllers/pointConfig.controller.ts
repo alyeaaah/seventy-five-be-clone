@@ -7,7 +7,7 @@ import { PointConfig } from "../entities/PointConfig";
 
 export default class PointConfigController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, points } = req.body;
     try {
       if (!name) {
@@ -67,7 +67,7 @@ export default class PointConfigController {
 
   // create update method to update point config and matchpoint
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, points } = req.body;
     try {
@@ -130,7 +130,7 @@ export default class PointConfigController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -182,7 +182,7 @@ export default class PointConfigController {
   }
 
   async dropdown(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -216,7 +216,7 @@ export default class PointConfigController {
     }
   }
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const pointConfigRepo = AppDataSource.getRepository(PointConfig);
@@ -234,7 +234,7 @@ export default class PointConfigController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const pointConfigRepo = AppDataSource.getRepository(PointConfig);
@@ -252,7 +252,7 @@ export default class PointConfigController {
   }
   // publicDetail
   async publicDetail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const pointConfigRepo = AppDataSource.getRepository(PointConfig);

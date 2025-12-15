@@ -56,6 +56,14 @@ const dataSourceOpt: DataSourceOptions = {
   database: config.mysql.database,
   synchronize: false,
   logging: false,
+  // Connection pooling optimizations
+  extra: {
+    connectionLimit: 10,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    reconnect: true,
+  },
+  poolSize: 10,
   entities: [
     User,
     Player,

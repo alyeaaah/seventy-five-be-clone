@@ -1,6 +1,6 @@
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
-import { Brackets, In, IsNull, Like, Not } from "typeorm";
+import { Brackets, In, IsNull } from "typeorm";
 
 import { AppDataSource } from "../data-source";
 import { Tournament, typeTournamentEnum } from "../entities/Tournament";
@@ -27,7 +27,7 @@ export default class MatchController {
     this.playerMatches = this.playerMatches.bind(this);
   }
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid, home_team_uuid, away_team_uuid, round } = req.body;
     try {
       if (!tournament_uuid || !home_team_uuid || !away_team_uuid || !round) {
@@ -76,8 +76,8 @@ export default class MatchController {
     }
   }
   async createMultiple(req: any, res: any) {
-    const redisLib = new RedisLib();
-    const utilLib = new Util();
+    const redisLib = RedisLib.getInstance();
+    const utilLib = Util.getInstance();
     const { tournament_uuid, matches } = req.body;
     try {
       // check tournament_uuid exists
@@ -154,7 +154,7 @@ export default class MatchController {
     }
   }
   async updateMultiple(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid, matches } = req.body;
     try {
       if (!tournament_uuid || !matches) {
@@ -264,7 +264,7 @@ export default class MatchController {
     }
   }
   async createMultipleCustom(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { matches } = req.body;
     try {
       if (!matches) {
@@ -373,7 +373,7 @@ export default class MatchController {
     }
   }
   async updateCustom(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid, home_team, away_team, home_team_uuid, away_team_uuid, point_config_uuid, date, court_field_uuid } = req.body;
     try {
       
@@ -413,10 +413,6 @@ export default class MatchController {
             i++;
           }
         }
-        
-        // for (const htp of home_team.players) {
-        //   const teamPlayers = await teamPLayersRepo.findBy({
-        //     team_uuid: home_team_uuid,
         //     deletedAt: IsNull()
         //   });
         //   if (!teamPlayers?.length) {
@@ -467,7 +463,7 @@ export default class MatchController {
     }
   }
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid, page, limit } = req.query;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -588,7 +584,7 @@ export default class MatchController {
     }
   }
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const matchesRepo = AppDataSource.getRepository(Matches);
@@ -694,7 +690,7 @@ export default class MatchController {
   }
 
   async updateScore(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { home_team_score, away_team_score, game_scores, notes, status, player_uuid } = req.body;
     try {
@@ -841,7 +837,6 @@ export default class MatchController {
           }
           // END: set player point
         }
-        // throw new Error("RESULT");
         if ((status == MatchHistoryType.INJURY || status == MatchHistoryType.NO_SHOW || status == MatchHistoryType.OTHERS) && player_uuid) {
           const teamUuid = data?.away_team?.players?.find((player) => player.player_uuid === player_uuid)?.team_uuid || data?.home_team?.players?.find((player) => player.player_uuid === player_uuid)?.team_uuid || undefined;
           if (player_uuid.includes("BOTH")) {
@@ -899,7 +894,7 @@ export default class MatchController {
     }
   }
   async updateVideoURL(req:any, res:any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { video_url } = req.body;
     try {
@@ -923,7 +918,7 @@ export default class MatchController {
     }
   }
   async endMatch(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { home_team_score, away_team_score, winner_team_uuid } = req.body;
     try {
@@ -968,7 +963,6 @@ export default class MatchController {
         data.away_team_score = away_team_score;
         data.winner_team_uuid = winner_team_uuid;
         data.status = MatchStatus.ENDED;
-        // await matchesRepo.save(data);
         await entityManager.save(data);
 
         // set player point
@@ -981,7 +975,6 @@ export default class MatchController {
         });
 
         let mpUuid = "";
-        let tmUuid = "";
         const mpRepo = AppDataSource.getRepository(MatchPoint);
         const mpData = await mpRepo.findOneBy({
           round: data.round,
@@ -994,20 +987,16 @@ export default class MatchController {
         } else if (mpData) {
           playerPoint = mpData.win_point;
           playerCoin = mpData.win_coin;
-          tmUuid = mpData.uuid;
+          mpUuid = mpData.uuid;
         }
         // get Players
-        if (dataTeam && dataTeam.players && (playerPoint > 0 || playerCoin > 0)) {
+        if (dataTeam?.players && (playerPoint > 0 || playerCoin > 0)) {
           const playerRepo = AppDataSource.getRepository(Player);
-          const playerPointRepo = AppDataSource.getRepository(PlayerMatchPoint);
-          const coinLogRepo = AppDataSource.getRepository(CoinLogs);
-          const pointLogRepo = AppDataSource.getRepository(PointLogs);
           dataTeam.players.forEach(async (player: any) => {
             let p : any = await playerRepo.findOneBy({ uuid : player.player_uuid });
             if (p) {
               p.point = p.point + playerPoint;
               p.coin = p.coin + playerCoin;
-              // await playerRepo.save(p);
               entityManager.save(p);
               const newPlayerPoint = new PlayerMatchPoint();
               newPlayerPoint.player_uuid = player.uuid;
@@ -1054,7 +1043,7 @@ export default class MatchController {
   }
 
   async updateMatchStatus(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { status, notes } = req.body;
     try {
@@ -1089,7 +1078,7 @@ export default class MatchController {
   }
 
   async updateSetScore(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { home_team_score, away_team_score, set_number, type, game_history } =
       req.body;
@@ -1167,7 +1156,7 @@ export default class MatchController {
     }
   }
   async endSet(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { winner_team_uuid, set_number } = req.body;
     try {
@@ -1200,7 +1189,7 @@ export default class MatchController {
     }
   }
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const matchesRepo = AppDataSource.getRepository(Matches);
@@ -1250,7 +1239,7 @@ export default class MatchController {
   } 
 
   async playerMatches(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const status = req.query.status as MatchStatus || MatchStatus.ENDED;
     const player_uuid = req.params.player_uuid || req.data?.uuid;
     
@@ -1297,13 +1286,11 @@ export default class MatchController {
   }
   // BEGIN: Public API
   async publicMatchList(req: any, res: any, status?: MatchStatus) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid } = req.query;
     try {
-      const page = parseInt((req.query.page as string) || "1");
-      const limit = parseInt((req.query.limit as string) || "10");
-      const offset = (page - 1) * limit;
-      const search = (req.query.search as string) || "";
+      const page = Number.parseInt((req.query.page as string) || "1", 10);
+      const limit = Number.parseInt((req.query.limit as string) || "10", 10);
       if (tournament_uuid) {
         
         const tRepo = AppDataSource.getRepository(Tournament);
@@ -1431,7 +1418,7 @@ export default class MatchController {
   }
 
   async publicMatchDetail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const matchesRepo = AppDataSource.getRepository(Matches);
@@ -1543,7 +1530,7 @@ export default class MatchController {
     }
   }
   async publicTournamentMatchList(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid } = req.params;
     const { page, limit } = req.query;
     try {

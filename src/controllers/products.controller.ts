@@ -10,7 +10,7 @@ import { MerchCategory } from "../entities/MerchCategory";
 export default class ProductController {
 
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, description, media_url, unit, details, galleries } = req.body;
     try {
       if (!name || !description || !unit) {
@@ -76,7 +76,7 @@ export default class ProductController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -127,7 +127,7 @@ export default class ProductController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const merchRepo = AppDataSource.getRepository(MerchProduct);
@@ -164,7 +164,7 @@ export default class ProductController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, description, media_url, unit, details, galleries } = req.body;
     try {
@@ -264,7 +264,7 @@ export default class ProductController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const merchRepo = AppDataSource.getRepository(MerchProduct);
@@ -283,7 +283,7 @@ export default class ProductController {
     }
   }
   async toggleFeatured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const merchRepo = AppDataSource.getRepository(MerchProduct);
@@ -314,7 +314,7 @@ export default class ProductController {
     }
   }
   async featured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -369,7 +369,7 @@ export default class ProductController {
     }
   }
   async publicDetail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const merchRepo = AppDataSource.getRepository(MerchProduct);

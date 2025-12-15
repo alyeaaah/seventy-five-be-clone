@@ -14,7 +14,7 @@ app.use((req, res, next) => {
     sameSite: true,  // ← Required for cross-site
     httpOnly: true     // ← Recommended for security
   });
-  console.log("Incoming path:", req.method, req.url);
+  // Removed console.log untuk performa - gunakan logging middleware
   next();
 });
 app.listen(PORT, () => {

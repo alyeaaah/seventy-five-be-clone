@@ -40,7 +40,7 @@ export default class MediaController {
   // Category
 
   async categoryList(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const mediaRepo = AppDataSource.getRepository(GalleryAlbum);
       let [data, totalRecords] = await mediaRepo.findAndCount({
@@ -58,7 +58,7 @@ export default class MediaController {
     }
   }
   async categoryCreate(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name } = req.body;
     try {
       if(!name) {
@@ -85,7 +85,7 @@ export default class MediaController {
 
   // Media
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { category_uuid } = req.query;
     try {
       const mediaRepo = AppDataSource.getRepository(Gallery);
@@ -110,7 +110,7 @@ export default class MediaController {
   }
 
   async listAlbums(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
 
       const page = parseInt((req.query.page as string) || "1");
@@ -187,7 +187,7 @@ export default class MediaController {
   }
 
   async createAlbum(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const {  name, description, galleries, tags} = req.body;
     try {
       if(!name || !description || !galleries) {
@@ -249,7 +249,7 @@ export default class MediaController {
   }
 
   async updateAlbum(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, description, tags, galleries} = req.body;
     try {
@@ -348,7 +348,7 @@ export default class MediaController {
   }
 
   async deleteAlbum(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const galleryAlbumRepo = AppDataSource.getRepository(GalleryAlbum);
@@ -372,7 +372,7 @@ export default class MediaController {
   }
 
   async detailAlbum(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const galleryAlbumRepo = AppDataSource.getRepository(GalleryAlbum);
@@ -444,7 +444,7 @@ export default class MediaController {
   }
 
   async updateGalleryPlayers(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
 
     const validatedBody = galleryPlayersPayloadSchema.safeParse(req.body);
@@ -524,7 +524,7 @@ export default class MediaController {
   }
 
   async addPhoto(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const {  name, description, link, album_uuid, tournament_uuid, category_uuid, court_uuid, court_field_uuid, match_uuid, player_uuid } = req.body;
     try {
       if(!name || !link) {
@@ -560,7 +560,7 @@ export default class MediaController {
     }
   }
   async updatePhoto(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const {uuid} = req.params
     const {  name, description, link, album_uuid, tournament_uuid, category_uuid, court_uuid, court_field_uuid, match_uuid, player_uuid } = req.body;
     try {
@@ -600,7 +600,7 @@ export default class MediaController {
   }
 
   async deletePhoto(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const galleryRepo = AppDataSource.getRepository(Gallery);
@@ -624,7 +624,7 @@ export default class MediaController {
   }
 
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { category_uuid, link, name, type, description } = req.body;
     try {
       if(!category_uuid || !link || !name || !type) {
@@ -659,7 +659,7 @@ export default class MediaController {
   }
 
   async toggleFeatured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const mediaRepo = AppDataSource.getRepository(Gallery);
@@ -679,7 +679,7 @@ export default class MediaController {
   }
 
   async listGalleryByPlayer(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { limit, page} = req.query;
     try {
       const playerGalleryRepo = AppDataSource.getRepository(PlayerGallery);
@@ -716,7 +716,7 @@ export default class MediaController {
   }
 
   async featured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { limit, page} = req.query;
     try {
       const mediaRepo = AppDataSource.getRepository(Gallery);
@@ -752,7 +752,7 @@ export default class MediaController {
   }
 
   async publicDetailAlbum(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const galleryAlbumRepo = AppDataSource.getRepository(GalleryAlbum);
@@ -815,7 +815,7 @@ export default class MediaController {
       return res.status(400).json({ message: error.message });
     }
   }
-  async publicAlbums(req: any, res: any) {const utilLib = new Util();
+  async publicAlbums(req: any, res: any) {const utilLib = Util.getInstance();
     try {
 
       const page = parseInt((req.query.page as string) || "1");

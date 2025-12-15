@@ -10,7 +10,7 @@ import { Team } from "../entities/Team";
 
 export default class TeamController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid, name, players } = req.body;
     try {
       if (!tournament_uuid || !name || !players || players.length !== 2) {
@@ -69,7 +69,7 @@ export default class TeamController {
   }
   // create method to generate teams, based on request body that contain { uuid, players: [{ player_uuid, team_uuid, team_name, team_alias}]} create new team if team_uuid is empty
   async generateTeams(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { players } = req.body;
     const { uuid } = req.params;
     try {
@@ -231,7 +231,7 @@ export default class TeamController {
   }
 
   async listPlayerTeam(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -277,7 +277,7 @@ export default class TeamController {
   }
 
   async listTeams(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -333,7 +333,7 @@ export default class TeamController {
   
   
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid } = req.query;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -367,7 +367,7 @@ export default class TeamController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const teamRepo = AppDataSource.getRepository(Team);
@@ -388,7 +388,7 @@ export default class TeamController {
     }
   }
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, players } = req.body;
     try {
@@ -452,7 +452,7 @@ export default class TeamController {
     }
   }
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const teamRepo = AppDataSource.getRepository(Team);
