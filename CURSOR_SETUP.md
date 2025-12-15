@@ -74,6 +74,27 @@ GitHub Actions workflow untuk menjalankan automated code review.
 2. File `.cursorrules` akan otomatis digunakan jika ada di root repository
 3. Tidak perlu konfigurasi tambahan untuk menggunakan `.cursorrules`
 
+### Error: "ConnectError: [resource_exhausted] Error"
+
+**Penyebab:** API rate limit tercapai, model quota habis, atau model sedang overloaded.
+
+**Solusi:**
+
+1. **Retry Logic**: Workflow sudah include retry dengan exponential backoff (3 attempts)
+2. **Fallback Model**: Workflow akan otomatis switch ke fallback model jika primary model gagal
+3. **Check API Key**: Pastikan `CURSOR_API_KEY` valid dan memiliki quota yang cukup
+4. **Wait and Retry**: Jika error terjadi, tunggu beberapa menit dan trigger workflow lagi
+5. **Use Different Model**: Ganti model di workflow dengan model yang kurang populer:
+   - `sonnet-4.5` (recommended fallback)
+   - `opus-4.1` (alternative)
+   - `auto` (let Cursor choose)
+
+**Workflow sudah include:**
+
+- ✅ Automatic retry (3 attempts dengan exponential backoff)
+- ✅ Fallback model switching
+- ✅ Better error messages
+
 ### Error: "Invalid project config"
 
 **Penyebab:** Format JSON tidak valid atau struktur tidak sesuai.

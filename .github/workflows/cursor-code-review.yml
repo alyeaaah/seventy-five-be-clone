@@ -33,8 +33,10 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           MODEL: gpt-5.2  # Available models: composer-1, auto, sonnet-4.5, opus-4.5, gemini-3-pro, gpt-5.2, gpt-5.1, opus-4.1, grok
+          FALLBACK_MODEL: sonnet-4.5  # Fallback if primary model fails
         run: |
-          cursor-agent --force --model "$MODEL" --output-format=text --print "You are operating in a GitHub Actions runner performing automated code review. The gh CLI is available and authenticated via GH_TOKEN. You may comment on pull requests.
+          # Review prompt
+          REVIEW_PROMPT="You are operating in a GitHub Actions runner performing automated code review. The gh CLI is available and authenticated via GH_TOKEN. You may comment on pull requests.
 
           Context:
           - Repo: ${{ github.repository }}
@@ -63,4 +65,56 @@ jobs:
           - Submit one review containing inline comments plus a concise summary
           - Use only: gh pr review --comment
           - Do not use: gh pr review --approve or --request-changes"
+
+          # Function to run review with retry
+          run_review_with_retry() {
+            local model=$1
+            local max_retries=3
+            local retry_count=0
+            local delay=10
+            
+            while [ $retry_count -lt $max_retries ]; do
+              echo "🔄 Attempting code review with model: $model (attempt $((retry_count + 1))/$max_retries)"
+              
+              if cursor-agent --force --model "$model" --output-format=text --print "$REVIEW_PROMPT" 2>&1; then
+                echo "✅ Code review completed successfully with model: $model"
+                return 0
+              else
+                local exit_code=$?
+                echo "❌ Review failed with exit code: $exit_code"
+                
+                if [ $retry_count -lt $((max_retries - 1)) ]; then
+                  echo "⏳ Waiting ${delay}s before retry..."
+                  sleep $delay
+                  delay=$((delay * 2))  # Exponential backoff
+                fi
+              fi
+              
+              retry_count=$((retry_count + 1))
+            done
+            
+            return 1
+          }
+
+          # Try primary model first
+          if run_review_with_retry "$MODEL"; then
+            echo "✅ Code review completed with primary model: $MODEL"
+            exit 0
+          fi
+
+          # If primary model fails, try fallback
+          echo "⚠️ Primary model ($MODEL) failed, trying fallback model: $FALLBACK_MODEL"
+          if run_review_with_retry "$FALLBACK_MODEL"; then
+            echo "✅ Code review completed with fallback model: $FALLBACK_MODEL"
+            exit 0
+          fi
+
+          # If both fail, exit with error
+          echo "❌ Code review failed with both primary and fallback models"
+          echo "This might be due to:"
+          echo "  - API rate limit exceeded"
+          echo "  - Model quota exhausted"
+          echo "  - Network connectivity issues"
+          echo "  - Invalid CURSOR_API_KEY"
+          exit 1
               
