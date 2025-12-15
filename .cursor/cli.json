@@ -6,10 +6,11 @@
       "Shell(gh pr diff)",
       "Shell(gh pr review)",
       "Shell(gh api)"
+    ],
+    "deny": [
+      "Shell(git push)",
+      "Shell(gh pr create)",
+      "Write(**)"
     ]
-  },
-  "rules": {
-    "useRulesFile": true,
-    "rulesFile": ".cursorrules"
   }
 }

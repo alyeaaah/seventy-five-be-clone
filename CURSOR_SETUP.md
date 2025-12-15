@@ -17,23 +17,31 @@ File konfigurasi untuk cursor-agent dengan permissions yang diperlukan untuk cod
       "Shell(gh pr diff)",
       "Shell(gh pr review)",
       "Shell(gh api)"
-    ]
-  },
-  "rules": {
-    "useRulesFile": true,
-    "rulesFile": ".cursorrules"
+    ],
+    "deny": ["Shell(git push)", "Shell(gh pr create)", "Write(**)"]
   }
 }
 ```
 
 **Penjelasan:**
 
-- `permissions.allow`: Array permission yang diizinkan untuk cursor-agent
+- `permissions.allow`: Array permission yang diizinkan untuk cursor-agent (REQUIRED)
+
   - `Read(**/*)`: Baca semua file di repository
   - `Shell(gh pr view)`: Gunakan GitHub CLI untuk melihat PR
   - `Shell(gh pr diff)`: Gunakan GitHub CLI untuk melihat diff
   - `Shell(gh pr review)`: Gunakan GitHub CLI untuk membuat review comments
   - `Shell(gh api)`: Gunakan GitHub API
+
+- `permissions.deny`: Array permission yang dilarang untuk cursor-agent (REQUIRED)
+  - `Shell(git push)`: Mencegah push ke repository
+  - `Shell(gh pr create)`: Mencegah membuat PR baru
+  - `Write(**)`: Mencegah write operations
+
+**Catatan Penting:**
+
+- Key `rules` **TIDAK didukung** oleh cursor-agent CLI schema dan akan menyebabkan error
+- File `.cursorrules` akan otomatis digunakan jika ada di root repository, tidak perlu konfigurasi tambahan
 
 ### 2. `.cursorrules`
 
@@ -45,15 +53,26 @@ GitHub Actions workflow untuk menjalankan automated code review.
 
 ## Troubleshooting
 
-### Error: "Required permissions.allow"
+### Error: "Required permissions.allow" atau "Required permissions.deny"
 
-**Penyebab:** File `.cursor/cli.json` tidak ada atau `permissions.allow` tidak terdefinisi.
+**Penyebab:** File `.cursor/cli.json` tidak ada atau `permissions.allow`/`permissions.deny` tidak terdefinisi.
 
 **Solusi:**
 
 1. Pastikan file `.cursor/cli.json` ada di root repository
-2. Pastikan `permissions.allow` adalah array (bukan object atau string)
-3. Validasi JSON dengan: `cat .cursor/cli.json | python3 -m json.tool`
+2. Pastikan `permissions.allow` adalah array (REQUIRED)
+3. Pastikan `permissions.deny` adalah array (REQUIRED)
+4. Validasi JSON dengan: `cat .cursor/cli.json | python3 -m json.tool`
+
+### Error: "Unrecognized key(s): 'rules'"
+
+**Penyebab:** Key `rules` tidak didukung oleh cursor-agent CLI schema.
+
+**Solusi:**
+
+1. Hapus key `rules` dari `.cursor/cli.json`
+2. File `.cursorrules` akan otomatis digunakan jika ada di root repository
+3. Tidak perlu konfigurasi tambahan untuk menggunakan `.cursorrules`
 
 ### Error: "Invalid project config"
 
@@ -62,8 +81,9 @@ GitHub Actions workflow untuk menjalankan automated code review.
 **Solusi:**
 
 1. Validasi JSON syntax
-2. Pastikan semua field required ada
-3. Check dokumentasi cursor-agent untuk format yang benar
+2. Pastikan semua field required ada (`permissions.allow` dan `permissions.deny`)
+3. Pastikan tidak ada key yang tidak didukung (seperti `rules`)
+4. Check dokumentasi cursor-agent untuk format yang benar
 
 ### Error: "Model not found"
 
