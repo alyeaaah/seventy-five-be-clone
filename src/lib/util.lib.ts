@@ -1,11 +1,10 @@
 import * as log4js from "log4js";
-import axios from "axios";
 
 export default class Util {
   private static instance: Util;
-  private logConf: any;
-  private logger: any;
-  private loggerError: any;
+  private readonly logConf: any;
+  private readonly logger: any;
+  private readonly loggerError: any;
 
   private constructor() {
     this.logConf = {
