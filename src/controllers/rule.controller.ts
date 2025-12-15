@@ -3,7 +3,6 @@ import { Rule } from "../entities/Rule";
 import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
-import { Like, Not } from "typeorm";
 
 export default class RuleController {
   async create(req: any, res: any) {
