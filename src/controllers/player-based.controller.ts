@@ -1,8 +1,6 @@
 import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { PlayerTeam } from "../entities/PlayerTeam";
-import { Matches, MatchStatus } from "../entities/Matches";
-import { matchSchema } from "../schemas/tournament.schema";
 import { Brackets, In, IsNull, Not } from "typeorm";
 import { Tournament } from "../entities/Tournament";
 
