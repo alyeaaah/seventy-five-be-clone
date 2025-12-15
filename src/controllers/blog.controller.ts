@@ -329,7 +329,7 @@ export default class BlogContentController {
       const redisKey = `blog-list-home-${page}-${limit}-${search}`;
       const cachedData = await redisLib.redisget(redisKey);
       
-      if (cachedData) {
+      if (cachedData && cachedData !== null) {
         utilLib.loggingRes(req, { cachedData });
         return res.json(cachedData);
       }
