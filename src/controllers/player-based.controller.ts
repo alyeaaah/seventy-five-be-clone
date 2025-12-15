@@ -1,7 +1,7 @@
 import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { PlayerTeam } from "../entities/PlayerTeam";
-import { Brackets, In, IsNull, Not } from "typeorm";
+import { In, IsNull, Not } from "typeorm";
 import { Tournament } from "../entities/Tournament";
 
 export default class PlayerBasedController {
