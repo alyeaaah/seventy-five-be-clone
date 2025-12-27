@@ -6,14 +6,13 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn,
-    OneToMany,
-    OneToOne
+    OneToMany
   } from "typeorm";
 import { Tournament } from "./Tournament";
 import { PlayerTeam } from "./PlayerTeam";
 import { Matches } from "./Matches";
 import { MatchHistories } from "./MatchHistories";
-import { TournamentGroupTeam } from "./TournamentGroupTeams";
+import { TournamentGroup } from "./TournamentGroups";
   
   @Entity("teams")
   export class Team {
@@ -36,6 +35,22 @@ import { TournamentGroupTeam } from "./TournamentGroupTeams";
     @Column()
     alias: string = "";
   
+    // Tournament Group related fields (merged from TournamentGroupTeam)
+    @Column({ type: "varchar", nullable: true })
+    group_uuid: string | null = null;
+
+    @Column({ type: "int", nullable: true, default: 0 })
+    matches_won: number = 0;
+
+    @Column({ type: "int", nullable: true, default: 0 })
+    games_won: number = 0;
+
+    @Column({ type: "int", nullable: true, default: 0 })
+    point: number = 0;
+
+    @Column({ type: "int", nullable: true, default: 0 })
+    matches_played: number = 0;
+  
     @Column({ type: "varchar", nullable: true })
     createdBy: string | undefined;
   
@@ -55,6 +70,10 @@ import { TournamentGroupTeam } from "./TournamentGroupTeams";
     @JoinColumn({ name: 'tournament_uuid', referencedColumnName: 'uuid' })
     tournament: Tournament | undefined;
 
+    @ManyToOne(() => TournamentGroup, (group) => group.teams, { nullable: true })
+    @JoinColumn({ name: 'group_uuid', referencedColumnName: 'group_uuid' })
+    group: TournamentGroup | undefined;
+
     @OneToMany(() => PlayerTeam, (playerTeam) => playerTeam.team)
     players: PlayerTeam[] | undefined;
 
@@ -69,8 +88,5 @@ import { TournamentGroupTeam } from "./TournamentGroupTeams";
 
     @OneToMany(() => MatchHistories, (matchHistories) => matchHistories.team)
     matchHistories: MatchHistories[] | undefined;
-
-    @OneToOne(() => TournamentGroupTeam, (tournamentGroupTeam) => tournamentGroupTeam.team)
-    tournamentGroupTeam: TournamentGroupTeam | undefined;
   }
   

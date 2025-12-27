@@ -168,7 +168,6 @@ export default class MatchController {
       if (!dataExists) {
         throw new Error("Tournament not found!");
       }
-      const matchesRepo = AppDataSource.getRepository(Matches);
       const result:{
         data: any[];
         updatedRecords: number;
@@ -180,8 +179,33 @@ export default class MatchController {
       }
       // transactional appdatasource create transaction
       await AppDataSource.transaction(async (entityManager) => {
-        // delete all matches where tournament uuid
-        await entityManager.delete(Matches, { tournament_uuid: tournament_uuid });
+        // Get all existing matches for this tournament
+        const existingMatches = await entityManager.find(Matches, {
+          where: {
+            tournament_uuid: tournament_uuid,
+            deletedBy: IsNull(),
+          },
+        });
+
+        // Create Set of payload UUIDs for fast lookup
+        const payloadUuids = new Set(matches.map((m: any) => m.uuid).filter(Boolean));
+
+        // Soft delete matches that are not in payload
+        let deletedCount = 0;
+        for (const existingMatch of existingMatches) {
+          if (!payloadUuids.has(existingMatch.uuid)) {
+            existingMatch.deletedBy = req.data?.uuid || undefined;
+            existingMatch.deletedAt = new Date();
+            await entityManager.delete(Matches, { uuid: existingMatch.uuid });
+            deletedCount++;
+          }
+        }
+
+        if (deletedCount > 0) {
+          utilLib.loggingRes(req, { 
+            message: `Soft deleted ${deletedCount} matches that are not in payload`
+          });
+        }
         
         let index = 1;
         for (const m of matches) {
@@ -207,9 +231,12 @@ export default class MatchController {
             result.data.push(newMatch);
             result.updatedRecords++;
           } else {
-            const dataExists = await matchesRepo.findOneBy({
-              uuid: m.uuid,
-              deletedBy: IsNull(),
+            // Use entityManager for consistency within transaction
+            const dataExists = await entityManager.findOne(Matches, {
+              where: {
+                uuid: m.uuid,
+                deletedBy: IsNull(),
+              },
             });
             if (dataExists) {
 
@@ -254,6 +281,7 @@ export default class MatchController {
           }
           index++
         }
+        throw new Error("Test Error");
         utilLib.loggingRes(req, result);
         return res.json(result);
       }); 
