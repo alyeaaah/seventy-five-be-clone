@@ -196,7 +196,7 @@ export default class MatchController {
           if (!payloadUuids.has(existingMatch.uuid)) {
             existingMatch.deletedBy = req.data?.uuid || undefined;
             existingMatch.deletedAt = new Date();
-            await entityManager.delete(Matches, { uuid: existingMatch.uuid });
+            await entityManager.save(existingMatch);
             deletedCount++;
           }
         }
@@ -281,7 +281,6 @@ export default class MatchController {
           }
           index++
         }
-        throw new Error("Test Error");
         utilLib.loggingRes(req, result);
         return res.json(result);
       }); 

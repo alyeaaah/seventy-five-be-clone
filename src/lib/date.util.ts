@@ -47,6 +47,12 @@ export function calculateAge(dateOfBirth: Date | string | null | undefined): num
     age--;
   }
   
-  return Math.abs(age);
+  // Validate age: negative age indicates data quality issue (future date)
+  if (age < 0) {
+    console.warn(`Invalid age calculated: ${age} for date of birth: ${dob.toISOString()}. Date appears to be in the future.`);
+    return undefined;
+  }
+  
+  return age;
 }
 

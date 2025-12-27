@@ -27,7 +27,7 @@ export function cacheMiddleware(
       // Coba ambil dari cache
       try {
         const cached = await redisLib.redisget(cacheKey);
-        if (cached && cached !== null) {
+        if (cached !== null && cached !== undefined) {
           return res.json(cached);
         }
       } catch (e) {
