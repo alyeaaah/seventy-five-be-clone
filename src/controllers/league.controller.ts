@@ -6,7 +6,7 @@ import { Not } from "typeorm";
 
 export default class LeagueController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, description, year, status, media_url, color_scheme } = req.body;
     try {
       if (!name || !year || !status) {
@@ -36,7 +36,7 @@ export default class LeagueController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -78,7 +78,7 @@ export default class LeagueController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { id } = req.params;
     try {
       const leagueRepo = AppDataSource.getRepository(League);
@@ -95,7 +95,7 @@ export default class LeagueController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { id } = req.params;
     const { name, year, status, media_url, color_scheme } = req.body;
     try {
@@ -123,7 +123,7 @@ export default class LeagueController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { id } = req.params;
     try {
       const leagueRepo = AppDataSource.getRepository(League);

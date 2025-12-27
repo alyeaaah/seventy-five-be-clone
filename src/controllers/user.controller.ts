@@ -5,7 +5,7 @@ import { Player } from "../entities/Player";
 
 export default class UserController {
   async get(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const userRepo = AppDataSource.getRepository(User);
       const playerRepo = AppDataSource.getRepository(Player);

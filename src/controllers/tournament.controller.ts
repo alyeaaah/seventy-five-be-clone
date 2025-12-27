@@ -10,7 +10,7 @@ import { TournamentSponsors } from "../entities/TournamentSponsors";
 
 export default class TournamentController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, description, start_date, end_date, league_id, media_url, type, court_uuid, level_uuid, strict_level, rules, total_group } = req.body;
     try {
       if (!name || !description) {
@@ -59,7 +59,7 @@ export default class TournamentController {
     }
   }
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const { type } = req.query;
       const page = parseInt((req.query.page as string) || "1");
@@ -130,7 +130,7 @@ export default class TournamentController {
     }
   }
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -171,7 +171,7 @@ export default class TournamentController {
     }
   }
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, description, start_date, end_date, status, court_uuid, level_uuid, strict_level, league_id, media_url, point_config_uuid, rules, total_group } = req.body;
     
@@ -232,7 +232,7 @@ export default class TournamentController {
     }
   }
   async toggleFeatured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -251,7 +251,7 @@ export default class TournamentController {
     }
   }
   async publish(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { unpublish } = req.query;
     try {
@@ -269,7 +269,7 @@ export default class TournamentController {
     }
   }
   async updateStatus(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { status } = req.body;
     if (!status) return res.status(400).json({ message: "Status is required" });
@@ -289,7 +289,7 @@ export default class TournamentController {
     }
   }
   async updateTournamentSponsor(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { sponsors } = req.body;
     try {
@@ -342,7 +342,7 @@ export default class TournamentController {
     }
   }
   async listSponsors(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -373,7 +373,7 @@ export default class TournamentController {
     }
   }
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -391,7 +391,7 @@ export default class TournamentController {
   }
   // BEGIN: Public API
   async publicDetail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const {uuid} = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -426,7 +426,7 @@ export default class TournamentController {
     }
   }
   async featured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const {limit} = req.query;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);

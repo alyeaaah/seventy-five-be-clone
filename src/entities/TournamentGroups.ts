@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne } from "typeorm";
-import { TournamentGroupTeam } from "./TournamentGroupTeams";
+import { Team } from "./Team";
 import { Tournament } from "./Tournament";
 
 @Entity("tournament_groups")
@@ -35,8 +35,8 @@ export class TournamentGroup extends BaseEntity {
   @UpdateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" })
   updatedAt: Date | null = null;
 
-  @OneToMany(() => TournamentGroupTeam, (team) => team.group)
-  teams: TournamentGroupTeam[] | undefined; 
+  @OneToMany(() => Team, (team) => team.group)
+  teams: Team[] | undefined; 
   
   @ManyToOne(() => Tournament, (tournament) => tournament.groups)
   tournament: Tournament | undefined;

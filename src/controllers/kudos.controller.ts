@@ -9,7 +9,7 @@ import { Player } from "../entities/Player";
 
 export default class KudosController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name } = req.body;
     try {
       if (!name) {
@@ -35,7 +35,7 @@ export default class KudosController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -64,7 +64,7 @@ export default class KudosController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const kudosRepo = AppDataSource.getRepository(Kudos);
@@ -81,7 +81,7 @@ export default class KudosController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name } = req.body;
     try {
@@ -103,7 +103,7 @@ export default class KudosController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const kudosRepo = AppDataSource.getRepository(Kudos);
@@ -120,7 +120,7 @@ export default class KudosController {
     }
   }
   async playerKudosList(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { match_uuid, receiver_uuid, sender_uuid } = req.query;
     if (!match_uuid && !receiver_uuid && !sender_uuid) {
       return res.status(400).json({ message: "One of match_uuid, receiver_uuid, sender_uuid should be not empty" });
@@ -148,7 +148,7 @@ export default class KudosController {
     }
   }
   async givePlayerKudos(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const sender_uuid = req.data?.uuid;
     const { player_uuid, kudos_uuid, match_uuid, kudos_text, kudos_rating } = req.body;
     if (!player_uuid || !kudos_uuid || !match_uuid) {

@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export default class OrderController {
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { page = 1, limit = 10, status } = req.query;
     try {
       const orderRepo = AppDataSource.getRepository(MerchOrder);
@@ -57,7 +57,7 @@ export default class OrderController {
     }
   }
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const orderRepo = AppDataSource.getRepository(MerchOrder);
@@ -112,7 +112,7 @@ export default class OrderController {
     }
   }
   async updateStatus(req: any, res: any) {  
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { status, note, shipping_code } = req.body;
     try {

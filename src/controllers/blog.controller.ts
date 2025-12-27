@@ -11,7 +11,7 @@ import RedisLib from "../lib/redis.lib";
 
 export default class BlogContentController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { title, content, category_uuid, status, tags, image_cover  } = req.body;
     try {
       if (!title || !content || !image_cover) {
@@ -68,7 +68,7 @@ export default class BlogContentController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -126,7 +126,7 @@ export default class BlogContentController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const blogRepo = AppDataSource.getRepository(BlogContent);
@@ -176,7 +176,7 @@ export default class BlogContentController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { title, content, category_uuid, status, tags, image_cover } = req.body;
     try {
@@ -254,7 +254,7 @@ export default class BlogContentController {
   }
 
   async publish(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { unpublish } = req.body;
     try {
@@ -278,7 +278,7 @@ export default class BlogContentController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const blogRepo = AppDataSource.getRepository(BlogContent);
@@ -298,7 +298,7 @@ export default class BlogContentController {
     }
   }
   async toggleFeatured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const blogRepo = AppDataSource.getRepository(BlogContent);
@@ -319,8 +319,8 @@ export default class BlogContentController {
   }
 
   async featured(req: any, res: any) {
-    const utilLib = new Util();
-    const redisLib = new RedisLib();
+    const utilLib = Util.getInstance();
+    const redisLib = RedisLib.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -329,7 +329,7 @@ export default class BlogContentController {
       const redisKey = `blog-list-home-${page}-${limit}-${search}`;
       const cachedData = await redisLib.redisget(redisKey);
       
-      if (cachedData) {
+      if (cachedData && cachedData !== null) {
         utilLib.loggingRes(req, { cachedData });
         return res.json(cachedData);
       }
@@ -393,7 +393,7 @@ export default class BlogContentController {
   }
 
   async publicDetail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const blogRepo = AppDataSource.getRepository(BlogContent);

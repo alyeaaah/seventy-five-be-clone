@@ -4,14 +4,14 @@ import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
 import { IsNull, Like, MoreThan, Not } from "typeorm";
 import bcrypt from "bcryptjs";
-import moment from "moment";
+import { formatDate, formatDateCompact, calculateAge } from "../lib/date.util";
 import { Levels } from "../entities/Levels";
 import { registerSchema } from "../schemas/player.schema";
 import { League } from "../entities/League";
 
 export default class PlayerController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const {
       name,
       username,
@@ -51,7 +51,7 @@ export default class PlayerController {
           throw new Error("Username already exists!");
         }
         const hashedPassword: any = await new Promise((resolve, reject) => {
-        bcrypt.hash(password || moment(dateOfBirth).format("YYYYMMDD")+height, 10, function (err, hash) {
+        bcrypt.hash(password || formatDateCompact(dateOfBirth)+height, 10, function (err, hash) {
           if (err) reject(err);
           resolve(hash);
         });
@@ -87,8 +87,8 @@ export default class PlayerController {
           ...data,
           skills: JSON.parse(data.skills),
           phone: data.phoneNumber,
-          dateOfBirth: moment(data.dateOfBirth).format("YYYY-MM-DD"),
-          turnDate: moment(data.turnDate).format("YYYY-MM-DD"),
+          dateOfBirth: formatDate(data.dateOfBirth),
+          turnDate: formatDate(data.turnDate),
         }
         utilLib.loggingRes(req, { data: result });
         return res.json({ data: result });
@@ -99,7 +99,7 @@ export default class PlayerController {
     }
   }
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { attr } = req.params;
     try {
       const page = parseInt((req.query.page as string) || "1");
@@ -127,8 +127,8 @@ export default class PlayerController {
         ...d,
         skills: d.skills ? JSON.parse(d.skills) : undefined,
         phone: d.phoneNumber,
-        dateOfBirth: d.dateOfBirth ? moment(d.dateOfBirth).format("YYYY-MM-DD") : undefined,
-        turnDate: d.turnDate ? moment(d.turnDate).format("YYYY-MM-DD") : undefined,
+        dateOfBirth: formatDate(d.dateOfBirth),
+        turnDate: formatDate(d.turnDate),
         level: d.level ? d.level.name : undefined,
       }));
       const totalPages = Math.ceil(totalRecords / limit);
@@ -145,7 +145,7 @@ export default class PlayerController {
     }
   }
   async rank(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { attr } = req.params;
     try {
       const page = parseInt((req.query.page as string) || "1");
@@ -173,8 +173,8 @@ export default class PlayerController {
         ...d,
         skills: d.skills ? JSON.parse(d.skills) : undefined,
         phone: d.phoneNumber,
-        dateOfBirth: d.dateOfBirth ? moment(d.dateOfBirth).format("YYYY-MM-DD") : undefined,
-        turnDate: d.turnDate ? moment(d.turnDate).format("YYYY-MM-DD") : undefined,
+        dateOfBirth: formatDate(d.dateOfBirth),
+        turnDate: formatDate(d.turnDate),
         level: d.level ? d.level.name : undefined,
       }));
       const totalPages = Math.ceil(totalRecords / limit);
@@ -191,7 +191,7 @@ export default class PlayerController {
     }
   }
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid, attr } = req.params;
     try {
       const playerRepo = AppDataSource.getRepository(Player);
@@ -211,8 +211,8 @@ export default class PlayerController {
         ...data,
         skills: data.skills ? JSON.parse(data.skills) : undefined,
         phone: data.phoneNumber,
-        dateOfBirth: data.dateOfBirth ? moment(data.dateOfBirth).format("YYYY-MM-DD") : undefined,
-        turnDate: data.turnDate ? moment(data.turnDate).format("YYYY-MM-DD") : undefined,
+        dateOfBirth: formatDate(data.dateOfBirth),
+        turnDate: formatDate(data.turnDate),
         level: data.level ? data.level.name : undefined,
       };
       utilLib.loggingRes(req, { data: result });
@@ -223,7 +223,7 @@ export default class PlayerController {
     }
   }
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const {
       name,
@@ -300,8 +300,8 @@ export default class PlayerController {
         ...savedData,
         skills: JSON.parse(data.skills),
         phone: data.phoneNumber,
-        dateOfBirth: moment(data.dateOfBirth).format("YYYY-MM-DD"),
-        turnDate: moment(data.turnDate).format("YYYY-MM-DD"),
+        dateOfBirth: formatDate(data.dateOfBirth),
+        turnDate: formatDate(data.turnDate),
       }
       utilLib.loggingRes(req, { data: result, message: "Player updated successfully" });
       return res.json({ data: result, message: "Player updated successfully" });
@@ -311,7 +311,7 @@ export default class PlayerController {
     }
   }
   async updateRole(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { role } = req.body;
     try {
@@ -324,8 +324,8 @@ export default class PlayerController {
         ...savedData,
         skills: data.skills ? JSON.parse(data.skills): undefined,
         phone: data.phoneNumber,
-        dateOfBirth: moment(data.dateOfBirth).format("YYYY-MM-DD"),
-        turnDate: moment(data.turnDate).format("YYYY-MM-DD"),
+        dateOfBirth: formatDate(data.dateOfBirth),
+        turnDate: formatDate(data.turnDate),
       }
       utilLib.loggingRes(req, { data: result, message: "Player updated successfully" });
       return res.json({ data: result, message: "Player updated successfully" });
@@ -335,7 +335,7 @@ export default class PlayerController {
     }
   }
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const playerRepo = AppDataSource.getRepository(Player);
@@ -352,7 +352,7 @@ export default class PlayerController {
     }
   }
   async toggleFeatured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const playerRepo = AppDataSource.getRepository(Player);
@@ -371,7 +371,7 @@ export default class PlayerController {
     }
   }
   async publicRegistration(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const validatedBody = registerSchema.safeParse(req.body);
     if (validatedBody.error) {
       return res.status(400).json({ message: "Invalid registration data", errors: validatedBody.error?.issues.map((e) => e.path + ': ' + e.message) });
@@ -418,8 +418,8 @@ export default class PlayerController {
           password: "*****",
           confirmPassword: "*****",
           phone: data.phoneNumber,
-          dateOfBirth: moment(data.dateOfBirth).format("YYYY-MM-DD"),
-          turnDate: moment(data.turnDate).format("YYYY-MM-DD"),
+          dateOfBirth: formatDate(data.dateOfBirth),
+          turnDate: formatDate(data.turnDate),
         }
         utilLib.loggingRes(req, {message: "Player registered successfully", data: result });
         return res.json({ message: "Player registered successfully", data: result });
@@ -427,7 +427,7 @@ export default class PlayerController {
   }
 
   async featured(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const playerRepo = AppDataSource.getRepository(Player);
       // use queryBuilder
@@ -452,8 +452,8 @@ export default class PlayerController {
         password: "*****",
         skills: d.skills ? JSON.parse(d.skills) : undefined,
         phone: d.phoneNumber,
-        dateOfBirth: d.dateOfBirth ? moment(d.dateOfBirth).format("YYYY-MM-DD") : undefined,
-        turnDate: d.turnDate ? moment(d.turnDate).format("YYYY-MM-DD") : undefined,
+        dateOfBirth: formatDate(d.dateOfBirth),
+        turnDate: formatDate(d.turnDate),
         level: d.level ? d.level.name : undefined,
       }));
       utilLib.loggingRes(req, { data: result });
@@ -464,7 +464,7 @@ export default class PlayerController {
     }
   }
   async publicDetail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid, attr } = req.params;
     try {
       const playerRepo = AppDataSource.getRepository(Player);
@@ -490,8 +490,8 @@ export default class PlayerController {
         address: '*****',
         email: 'hidden_email@seventy.five',
         username: '********',
-        dateOfBirth: data.dateOfBirth ? moment(data.dateOfBirth).format("YYYY-MM-DD") : undefined,
-        turnDate: data.turnDate ? moment(data.turnDate).format("YYYY-MM-DD") : undefined,
+        dateOfBirth: formatDate(data.dateOfBirth),
+        turnDate: formatDate(data.turnDate),
         level: data.level ? data.level.name : undefined,
       };
       utilLib.loggingRes(req, { data: result });
@@ -502,7 +502,7 @@ export default class PlayerController {
     }
   }
   async publicStandings(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { limit = 30, level, league } = req.query;
     
     if (!level && !league) {
@@ -555,8 +555,8 @@ export default class PlayerController {
         email: 'hidden_email@seventy.five',
         username: '********',
         dateOfBirth: '*****',
-        age: d.dateOfBirth ? Math.abs(moment(d.dateOfBirth).diff(moment(), 'years')) : undefined,
-        turnDate: d.turnDate ? moment(d.turnDate).format("YYYY-MM-DD") : undefined,
+        age: calculateAge(d.dateOfBirth),
+        turnDate: formatDate(d.turnDate),
         level: d.level ? d.level.name : undefined,
       }));
       utilLib.loggingRes(req, { data: result });
@@ -567,7 +567,7 @@ export default class PlayerController {
     }
   }
   async publicRank(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { limit = 30 } = req.query;
     const { player_uuid } = req.params;
     if (!player_uuid) {

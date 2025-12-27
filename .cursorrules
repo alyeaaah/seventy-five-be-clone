@@ -1,0 +1,205 @@
+# Cursor AI Code Review Rules for Seventy Five API
+
+## Project Overview
+This is a Node.js/TypeScript backend API for Seventy Five Tennis Club using Express, TypeORM, and Redis.
+
+## Code Review Guidelines
+
+### 1. Performance & Optimization
+- ✅ Always use singleton pattern for Util and RedisLib: `Util.getInstance()`, `RedisLib.getInstance()`
+- ✅ Use native Date API instead of moment.js (use `src/lib/date.util.ts`)
+- ✅ Implement Redis caching for frequently accessed endpoints
+- ✅ Use QueryBuilder for complex database queries to avoid N+1 problems
+- ✅ Always use pagination for list endpoints
+- ✅ Use connection pooling for database connections
+
+### 2. TypeScript Best Practices
+- ✅ Use proper TypeScript types, avoid `any` when possible
+- ✅ Use interfaces for request/response types
+- ✅ Mark readonly properties with `readonly` modifier
+- ✅ Use strict null checks
+- ✅ Prefer type inference where appropriate
+
+### 3. Error Handling
+- ✅ Always use try-catch blocks for async operations
+- ✅ Return proper HTTP status codes (200, 201, 400, 401, 404, 500)
+- ✅ Log errors using `Util.getInstance().loggingError()`
+- ✅ Provide meaningful error messages to clients
+- ✅ Handle Redis connection errors gracefully (return null, don't crash)
+
+### 4. Database & Queries
+- ✅ Use soft deletes: check `deletedBy IS NULL` and `deletedAt IS NULL`
+- ✅ Use transactions for multi-step operations
+- ✅ Use `leftJoinAndSelect` or `relations` to avoid N+1 queries
+- ✅ Add proper indexes for frequently queried columns (uuid, deletedBy, status)
+- ✅ Use QueryBuilder for complex queries with multiple conditions
+
+### 5. Code Structure
+- ✅ Controllers should be thin - business logic in services (if needed)
+- ✅ Use consistent naming: camelCase for variables, PascalCase for classes
+- ✅ Group related functionality together
+- ✅ Keep functions focused and single-purpose
+- ✅ Maximum function length: ~100 lines (split if longer)
+
+### 6. Security
+- ✅ Never log passwords or sensitive data
+- ✅ Use JWT for authentication
+- ✅ Validate all user inputs
+- ✅ Use parameterized queries (TypeORM handles this)
+- ✅ Sanitize user inputs before database operations
+
+### 7. Logging
+- ✅ Use `Util.getInstance().loggingReq()` for requests
+- ✅ Use `Util.getInstance().loggingRes()` for responses
+- ✅ Use `Util.getInstance().loggingError()` for errors
+- ✅ Don't use `console.log` in production code
+- ✅ Log structured data (JSON format)
+
+### 8. Caching Strategy
+- ✅ Cache public endpoints that don't change frequently
+- ✅ Use appropriate TTL (Time To Live) for cached data
+- ✅ Invalidate cache on data updates
+- ✅ Use `cacheMiddleware` from `src/middlewares/cache.middleware.ts`
+- ✅ Cache keys should be descriptive and include relevant parameters
+
+### 9. API Design
+- ✅ Use RESTful conventions for routes
+- ✅ Consistent response format: `{ data, message, totalRecords?, totalPages? }`
+- ✅ Use proper HTTP methods (GET, POST, PUT, DELETE)
+- ✅ Validate request body using schemas (Zod)
+- ✅ Return appropriate status codes
+
+### 10. Dependencies
+- ✅ Don't add heavy dependencies (prefer native solutions)
+- ✅ Keep dependencies up to date
+- ✅ Remove unused dependencies
+- ✅ Use specific versions in package.json (avoid ^ for production)
+
+## Code Review Checklist
+
+When reviewing code, check for:
+
+### Performance Issues
+- [ ] N+1 query problems
+- [ ] Missing pagination
+- [ ] Missing caching for frequently accessed data
+- [ ] Inefficient database queries
+- [ ] Memory leaks (creating new instances unnecessarily)
+
+### Code Quality
+- [ ] TypeScript types are correct
+- [ ] Error handling is proper
+- [ ] Code follows project patterns
+- [ ] No duplicate code
+- [ ] Functions are focused and not too long
+
+### Security
+- [ ] No sensitive data in logs
+- [ ] Input validation present
+- [ ] Authentication/authorization checks
+- [ ] SQL injection prevention (TypeORM handles this)
+
+### Best Practices
+- [ ] Singleton pattern used for Util/RedisLib
+- [ ] Proper logging implemented
+- [ ] Soft delete checks present
+- [ ] Transactions used for multi-step operations
+
+## Common Issues to Flag
+
+### ❌ Bad Patterns
+```typescript
+// ❌ DON'T: Creating new instances
+const util = new Util();
+const redis = new RedisLib();
+
+// ❌ DON'T: Using moment.js
+import moment from "moment";
+moment(date).format("YYYY-MM-DD");
+
+// ❌ DON'T: Missing error handling
+const data = await repo.find();
+
+// ❌ DON'T: N+1 queries
+for (const item of items) {
+  const detail = await detailRepo.findOne({ where: { item_id: item.id } });
+}
+
+// ❌ DON'T: Missing soft delete check
+const data = await repo.findOne({ where: { uuid } });
+```
+
+### ✅ Good Patterns
+```typescript
+// ✅ DO: Use singleton pattern
+const util = Util.getInstance();
+const redis = RedisLib.getInstance();
+
+// ✅ DO: Use date utilities
+import { formatDate } from "../lib/date.util";
+formatDate(date);
+
+// ✅ DO: Proper error handling
+try {
+  const data = await repo.find();
+} catch (error: any) {
+  util.loggingError(req, error.message);
+  return res.status(400).json({ message: error.message });
+}
+
+// ✅ DO: Use joins to avoid N+1
+const data = await repo
+  .createQueryBuilder("item")
+  .leftJoinAndSelect("item.details", "details")
+  .where("item.deletedBy IS NULL")
+  .getMany();
+
+// ✅ DO: Check soft delete
+const data = await repo.findOne({ 
+  where: { uuid, deletedBy: IsNull() } 
+});
+```
+
+## File-Specific Guidelines
+
+### Controllers
+- Always use `Util.getInstance()` for logging
+- Use `RedisLib.getInstance()` for caching
+- Return consistent response format
+- Handle errors properly
+- Use proper HTTP status codes
+
+### Entities
+- Use TypeORM decorators correctly
+- Define relationships properly
+- Use soft deletes (deletedBy, deletedAt)
+- Add indexes for frequently queried columns
+
+### Middlewares
+- Keep middleware focused and reusable
+- Use singleton pattern for dependencies
+- Handle errors gracefully
+
+### Libraries (lib/)
+- Use singleton pattern for reusable classes
+- Keep utilities pure and focused
+- Document complex logic
+
+## Testing Considerations
+- Write unit tests for complex logic
+- Test error cases
+- Test edge cases
+- Mock external dependencies (Redis, Database)
+
+## Documentation
+- Document complex algorithms
+- Add JSDoc comments for public APIs
+- Keep README updated
+- Document breaking changes
+
+## Migration & Deployment
+- Always test migrations locally first
+- Use transactions for migrations
+- Have rollback strategy
+- Test in staging before production
+

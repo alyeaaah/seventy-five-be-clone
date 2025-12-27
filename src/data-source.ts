@@ -44,7 +44,6 @@ import { PlayerGallery } from "./entities/PlayerGallery";
 import { League } from "./entities/League";
 import { PlayerLog } from "./entities/PlayerLog";
 import { PlayerReview } from "./entities/PlayerReview";
-import { TournamentGroupTeam } from "./entities/TournamentGroupTeams";
 import { TournamentGroup } from "./entities/TournamentGroups";
 
 const dataSourceOpt: DataSourceOptions = {
@@ -56,6 +55,14 @@ const dataSourceOpt: DataSourceOptions = {
   database: config.mysql.database,
   synchronize: false,
   logging: false,
+  // Connection pooling optimizations
+  extra: {
+    connectionLimit: 10,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    reconnect: true,
+  },
+  poolSize: 10,
   entities: [
     User,
     Player,
@@ -100,7 +107,6 @@ const dataSourceOpt: DataSourceOptions = {
     League,
     PlayerLog,
     PlayerReview,
-    TournamentGroupTeam,
     TournamentGroup,
   ],
   migrationsRun: true,

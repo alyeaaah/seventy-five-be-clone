@@ -68,10 +68,10 @@ export default class AuthController {
           }
         );
       });
-      new Util().loggingRes(req, { token });
+      Util.getInstance().loggingRes(req, { token });
       return res.json({ token });
     } catch (error: any) {
-      new Util().loggingError(req, error.message);
+      Util.getInstance().loggingError(req, error.message);
       return res.status(400).json({ message: error.message });
     }
   }

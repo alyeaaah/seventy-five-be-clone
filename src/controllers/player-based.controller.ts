@@ -1,9 +1,7 @@
 import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { PlayerTeam } from "../entities/PlayerTeam";
-import { Matches, MatchStatus } from "../entities/Matches";
-import { matchSchema } from "../schemas/tournament.schema";
-import { Brackets, In, IsNull, Not } from "typeorm";
+import { In, IsNull, Not } from "typeorm";
 import { Tournament } from "../entities/Tournament";
 
 export default class PlayerBasedController {
@@ -11,7 +9,7 @@ export default class PlayerBasedController {
   }
 
   async getTournamentsByPlayer(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       
       const player_uuid = req.params.uuid || req.data?.uuid;
@@ -77,7 +75,7 @@ export default class PlayerBasedController {
     }
   }
   async getUpcomingTournamentByPlayer(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const player_uuid = req.params.uuid || req.data?.uuid;
       const { page = 1, limit = 20 } = req.query;

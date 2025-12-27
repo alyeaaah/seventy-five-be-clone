@@ -8,7 +8,7 @@ import { Gallery } from "../entities/Gallery";
 
 export default class CourtsController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, address, city, lat, long, fields } = req.body;
     try {
       if (!name || !address || !city || !lat || !long || !fields) {
@@ -72,7 +72,7 @@ export default class CourtsController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -120,7 +120,7 @@ export default class CourtsController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const courtsRepo = AppDataSource.getRepository(Courts);
@@ -151,7 +151,7 @@ export default class CourtsController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, address, city, lat, long, fields } = req.body;
     try {
@@ -261,7 +261,7 @@ export default class CourtsController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       await AppDataSource.transaction(async (transactionalEntityManager) => {

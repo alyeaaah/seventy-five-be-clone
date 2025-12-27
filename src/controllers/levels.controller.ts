@@ -6,7 +6,7 @@ import { Not } from "typeorm";
 
 export default class LevelsController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, level_tier } = req.body;
     try {
       if (!name || !level_tier) {
@@ -33,7 +33,7 @@ export default class LevelsController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -63,7 +63,7 @@ export default class LevelsController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const levelsRepo = AppDataSource.getRepository(Levels);
@@ -80,7 +80,7 @@ export default class LevelsController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, level_tier } = req.body;
     try {
@@ -103,7 +103,7 @@ export default class LevelsController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const levelsRepo = AppDataSource.getRepository(Levels);

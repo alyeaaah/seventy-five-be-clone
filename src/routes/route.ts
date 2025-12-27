@@ -30,29 +30,31 @@ import GeneralController from '../controllers/general.controller';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-const authCon = new AuthController;
-const generalCon = new GeneralController;
-const userCon = new UserController;
-const playerCon = new PlayerController;
-const tourCon = new TournamentController;
-const ruleCon = new RuleController;
-const teamCon = new TeamController;
-const matchCon = new MatchController
-const pointCon = new PointController;
-const kudosCon = new KudosController;
-const tagsCon = new TagsController;
-const levelsCon = new LevelsController;
-const courtsCon = new CourtsController;
-const mediaCon = new MediaController;
-const sponsorsCon = new SponsorsController;
-const pointConfigCon = new PointConfigController;
-const blogCon = new BlogContentController;
-const productCon = new ProductController;
-const shopCon = new ShopController;
-const addressCon = new AddressController;
-const orderCon = new OrderController;
-const leagueCon = new LeagueController;
-const playerBasedCon = new PlayerBasedController;
+
+// Initialize controllers once - lebih efisien daripada lazy loading per request
+const authCon = new AuthController();
+const generalCon = new GeneralController();
+const userCon = new UserController();
+const playerCon = new PlayerController();
+const tourCon = new TournamentController();
+const ruleCon = new RuleController();
+const teamCon = new TeamController();
+const matchCon = new MatchController();
+const pointCon = new PointController();
+const kudosCon = new KudosController();
+const tagsCon = new TagsController();
+const levelsCon = new LevelsController();
+const courtsCon = new CourtsController();
+const mediaCon = new MediaController();
+const sponsorsCon = new SponsorsController();
+const pointConfigCon = new PointConfigController();
+const blogCon = new BlogContentController();
+const productCon = new ProductController();
+const shopCon = new ShopController();
+const addressCon = new AddressController();
+const orderCon = new OrderController();
+const leagueCon = new LeagueController();
+const playerBasedCon = new PlayerBasedController();
 
 
 export const route = (router: Router) => {
