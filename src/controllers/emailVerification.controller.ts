@@ -5,7 +5,7 @@ import { Player } from "../entities/Player";
 import { v4 as uuidv4 } from "uuid";
 import { IsNull } from "typeorm";
 import Util from "../lib/util.lib";
-import EmailService from "../services/email.service";
+import { emailService } from "../services/email.service";
 
 export default class EmailVerificationController {
   async sendVerification(req: Request, res: Response) {
@@ -52,7 +52,7 @@ export default class EmailVerificationController {
       await verificationRepo.save(newVerification);
 
       // Send confirmation email
-      await EmailService.sendConfirmationEmail(
+      await emailService.sendConfirmationEmail(
         player.email,
         player.name,
         verificationCode
@@ -159,7 +159,7 @@ export default class EmailVerificationController {
       await verificationRepo.save(newVerification);
 
       // Send confirmation email
-      await EmailService.sendConfirmationEmail(
+      await emailService.sendConfirmationEmail(
         player.email,
         player.name,
         verificationCode

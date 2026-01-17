@@ -9,7 +9,7 @@ import { Levels } from "../entities/Levels";
 import { registerSchema } from "../schemas/player.schema";
 import { League } from "../entities/League";
 import { EmailVerification } from "../entities/EmailVerification";
-import EmailService from "../services/email.service";
+import { emailService } from "../services/email.service";
 
 export default class PlayerController {
   async create(req: any, res: any) {
@@ -429,11 +429,11 @@ export default class PlayerController {
         await verificationRepo.save(emailVerification);
         
         // Send confirmation email asynchronously (don't wait for it to complete)
-        EmailService.sendConfirmationEmail(
+        emailService.sendConfirmationEmail(
           data.email,
           data.name,
           verificationCode
-        ).catch(error => {
+        ).catch((error: any) => {
           console.error('Failed to send confirmation email:', error);
         });
         
