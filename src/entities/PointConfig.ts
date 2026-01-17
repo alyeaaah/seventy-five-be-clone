@@ -27,6 +27,9 @@ import { Matches } from "./Matches";
     @Column()
     name: string = "";
   
+    @Column({ type: "boolean", default: false })
+    isDefault: boolean = false;
+  
     @Column({ type: "varchar", nullable: true })
     createdBy: string | undefined;
   

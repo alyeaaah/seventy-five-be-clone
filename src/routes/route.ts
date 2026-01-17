@@ -27,6 +27,8 @@ import OrderController from '../controllers/order.controller';
 import LeagueController from '../controllers/league.controller';
 import PlayerBasedController from '../controllers/player-based.controller';
 import GeneralController from '../controllers/general.controller';
+import ChallengerController from '../controllers/challenger.controller';
+import EmailVerificationController from '../controllers/emailVerification.controller';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -34,6 +36,7 @@ const upload = multer({ storage: storage });
 // Initialize controllers once - lebih efisien daripada lazy loading per request
 const authCon = new AuthController();
 const generalCon = new GeneralController();
+const challengerCon = new ChallengerController();
 const userCon = new UserController();
 const playerCon = new PlayerController();
 const tourCon = new TournamentController();
@@ -55,6 +58,7 @@ const addressCon = new AddressController();
 const orderCon = new OrderController();
 const leagueCon = new LeagueController();
 const playerBasedCon = new PlayerBasedController();
+const emailVerificationCon = new EmailVerificationController();
 
 
 export const route = (router: Router) => {
@@ -129,7 +133,9 @@ export const route = (router: Router) => {
   // Match
   router.post("/api/match/create", logMiddleware, authMiddleware, matchCon.create);
   router.post("/api/match/generate", logMiddleware, authMiddleware, matchCon.createMultiple);
-  router.post("/api/match/update", logMiddleware, authMiddleware, matchCon.updateMultiple);
+  // router.post("/api/match/update", logMiddleware, authMiddleware, matchCon.updateMultiple);
+  router.put("/api/match/update/:uuid", logMiddleware, authMiddleware, matchCon.updateMatch);
+  router.post("/api/match/update", logMiddleware, authMiddleware, matchCon.updateMultipleMatches);
   router.post("/api/match/custom", logMiddleware, authMiddleware, matchCon.createMultipleCustom);
   router.get("/api/match/list", logMiddleware, authMiddleware, matchCon.list);
   router.get("/api/match/detail/:uuid", logMiddleware, authMiddleware, matchCon.detail);
@@ -150,6 +156,8 @@ export const route = (router: Router) => {
   router.get("/api/point-config/detail/:uuid", logMiddleware, authMiddleware, pointConfigCon.detail);
   router.put("/api/point-config/edit/:uuid", logMiddleware, authMiddleware, pointConfigCon.update);
   router.delete("/api/point-config/delete/:uuid", logMiddleware, authMiddleware, pointConfigCon.delete);
+  router.put("/api/point-config/:uuid/set-default", logMiddleware, authMiddleware, pointConfigCon.setDefaultPointConfig);
+  router.get("/api/point-config/get-default", logMiddleware, authMiddleware, pointConfigCon.getDefaultPointConfig);
 
   // Point
   router.get("/api/point/list", logMiddleware, authMiddleware, pointCon.list);
@@ -241,6 +249,7 @@ export const route = (router: Router) => {
   router.get("/api/public/match/ongoing", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchList(req, res, MatchStatus.ONGOING));
   router.get("/api/public/match/:uuid", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchDetail(req, res));
   router.get("/api/public/match/point-config/:uuid", logMiddleware, (req: Request, res: Response) => pointConfigCon.publicDetail(req, res));
+  router.get("/api/public/matches", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchList(req, res));
   router.get("/api/public/sponsors", logMiddleware, sponsorsCon.listSponsorBySlot);
 
   // Merchandise
@@ -260,6 +269,9 @@ export const route = (router: Router) => {
   router.get("/api/public/gallery", logMiddleware, mediaCon.publicAlbums);
   // Player
   router.post("/api/public/register", logMiddleware, playerCon.publicRegistration);
+  router.post("/api/public/email-verification/send", logMiddleware, emailVerificationCon.sendVerification);
+  router.post("/api/public/email-verification/verify", logMiddleware, emailVerificationCon.verifyEmail);
+  router.post("/api/public/email-verification/resend", logMiddleware, emailVerificationCon.resendVerification);
   router.get("/api/player/detail/:uuid/:attr", logMiddleware, playerCon.detail);
   router.get("/api/public/player/featured", logMiddleware, playerCon.featured);
   router.get("/api/public/player/standings", logMiddleware, playerCon.publicStandings);
@@ -286,6 +298,11 @@ export const route = (router: Router) => {
   router.get("/api/address/province", logMiddleware, addressCon.province);
   router.get("/api/address/city", logMiddleware, addressCon.city);
   router.get("/api/address/district", logMiddleware, addressCon.district);
+
+  // Challenger
+  router.get("/api/public/challenger", logMiddleware, challengerCon.listOpenChallengers);
+  router.post("/api/challenger/open", logMiddleware, authMiddleware, challengerCon.openChallenge);
+  router.post("/api/challenger/accept", logMiddleware, authMiddleware, challengerCon.acceptChallenger);
 
 
   router.all('*', function (req, res) {

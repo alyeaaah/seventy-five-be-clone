@@ -148,7 +148,7 @@ export default class PointConfigController {
       
       const queryBuilder = pointConfigRepo
         .createQueryBuilder("pointConfig")
-        .select(["pointConfig.uuid as uuid", "pointConfig.name as name", "pointConfig.createdAt as createdAt", "pointConfig.updatedAt as updatedAt", `(${subQuery}) AS totalRound`])
+        .select(["pointConfig.uuid as uuid", "pointConfig.name as name", "pointConfig.createdAt as createdAt", "pointConfig.updatedAt as updatedAt", `(${subQuery}) AS totalRound`, 'pointConfig.isDefault as isDefault'])
         .where("pointConfig.name LIKE :search", { search: `%${search}%` })
         .andWhere("pointConfig.deletedBy IS NULL")
         // .leftJoinAndSelect("pointConfig.points", "points")
@@ -250,6 +250,73 @@ export default class PointConfigController {
       return res.status(400).json({ message: error.message });
     }
   }
+  async setDefaultPointConfig(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    try {
+      const pointConfigRepo = AppDataSource.getRepository(PointConfig);
+      
+      // Find the point config to set as default
+      const pointConfig = await pointConfigRepo.findOneBy({ 
+        uuid, 
+        deletedAt: IsNull() 
+      });
+      
+      if (!pointConfig) {
+        throw new Error("Point config not found!");
+      }
+      
+      // Reset all point configs to non-default first
+      await pointConfigRepo.update(
+        { deletedAt: IsNull() },
+        { isDefault: false }
+      );
+      
+      // Set the selected point config as default
+      pointConfig.isDefault = true;
+      await pointConfigRepo.save(pointConfig);
+      
+      utilLib.loggingRes(req, { message: "Default point config set successfully!" });
+      return res.json({ 
+        message: "Default point config set successfully!",
+        data: {
+          uuid: pointConfig.uuid,
+          name: pointConfig.name,
+          isDefault: true
+        }
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+  
+  async getDefaultPointConfig(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    try {
+      const pointConfigRepo = AppDataSource.getRepository(PointConfig);
+      
+      // Find the default point config
+      const defaultConfig = await pointConfigRepo.findOneBy({ 
+        isDefault: true, 
+        deletedAt: IsNull() 
+      });
+      
+      if (!defaultConfig) {
+        throw new Error("No default point config found!");
+      }
+      
+      utilLib.loggingRes(req, { data: defaultConfig });
+      return res.json({ 
+        message: "Default point config retrieved successfully!",
+        data: defaultConfig
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
   // publicDetail
   async publicDetail(req: any, res: any) {
     const utilLib = Util.getInstance();

@@ -8,6 +8,8 @@ import { formatDate, formatDateCompact, calculateAge } from "../lib/date.util";
 import { Levels } from "../entities/Levels";
 import { registerSchema } from "../schemas/player.schema";
 import { League } from "../entities/League";
+import { EmailVerification } from "../entities/EmailVerification";
+import EmailService from "../services/email.service";
 
 export default class PlayerController {
   async create(req: any, res: any) {
@@ -412,6 +414,29 @@ export default class PlayerController {
         newPlayer.placeOfBirth = body.placeOfBirth;
         
         const data = await entityManager.save(newPlayer);
+        
+        // Generate verification code and send email
+        const verificationCode = uuidv4().replace(/-/g, '').substring(0, 8);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        
+        const verificationRepo = entityManager.getRepository(EmailVerification);
+        const emailVerification = new EmailVerification();
+        emailVerification.playerId = data.id!;
+        emailVerification.code = verificationCode;
+        emailVerification.expiresAt = expiresAt;
+        emailVerification.isUsed = false;
+        
+        await verificationRepo.save(emailVerification);
+        
+        // Send confirmation email asynchronously (don't wait for it to complete)
+        EmailService.sendConfirmationEmail(
+          data.email,
+          data.name,
+          verificationCode
+        ).catch(error => {
+          console.error('Failed to send confirmation email:', error);
+        });
+        
         const result = {
           ...data,
           skills: data.skills ? JSON.parse(data.skills) : undefined,
@@ -421,8 +446,8 @@ export default class PlayerController {
           dateOfBirth: formatDate(data.dateOfBirth),
           turnDate: formatDate(data.turnDate),
         }
-        utilLib.loggingRes(req, {message: "Player registered successfully", data: result });
-        return res.json({ message: "Player registered successfully", data: result });
+        utilLib.loggingRes(req, {message: "Player registered successfully. Please check your email for verification.", data: result });
+        return res.json({ message: "Player registered successfully. Please check your email for verification.", data: result });
       });
   }
 

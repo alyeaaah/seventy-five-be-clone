@@ -9,6 +9,9 @@ export class TournamentGroupTeam extends BaseEntity {
   id!: number;  // Use `!` to assert that the value will be set by the database
 
   @Column({ type: "varchar" })
+  tournament_uuid!: string;
+
+  @Column({ type: "varchar" })
   group_uuid!: string;
 
   @Column({ type: "varchar" })

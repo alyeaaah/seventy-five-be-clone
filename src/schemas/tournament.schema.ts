@@ -31,6 +31,7 @@ export const matchSchema = z.object({
   point_config_uuid: z.string().nullish(),
   home_team_score: z.number(),
   away_team_score: z.number(),
+  category: z.string().nullish(),
   game_scores: z.any().nullish(),
   round: z.number(),
   with_ad: z.boolean(),
@@ -47,4 +48,15 @@ export const matchSchema = z.object({
   court_field: courtFieldSchema.nullish(),
 });
 
+export const updateGroupPayloadSchema = z.object({
+  groups: z.array(z.object({
+    uuid: z.string().nullish(),
+    name: z.string(),
+    teams: z.array(z.object({
+      uuid: z.string().nullish(),
+      name: z.string(),
+    })),
+  })),
+});
+export type UpdateGroupPayloadData = z.infer<typeof updateGroupPayloadSchema>;
 export type MatchData = z.infer<typeof matchSchema>;
