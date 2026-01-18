@@ -1,11 +1,10 @@
 import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
-export class TournamentGroupTeams1757354250407 implements MigrationInterface {
-
+export class ChallengerMigration1768225556386 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: "tournament_group_teams",
+        name: "challengers",
         columns: [
           {
             name: "id",
@@ -15,32 +14,52 @@ export class TournamentGroupTeams1757354250407 implements MigrationInterface {
             generationStrategy: "increment",
           },
           {
-            name: "group_uuid",
-            type: "varchar", // The group this team belongs to
+            name: "challengerA_uuid",
+            type: "varchar",
           },
           {
-            name: "team_uuid",
-            type: "varchar", // The team from the `teams` table
+            name: "challengerB_uuid",
+            type: "varchar",
           },
           {
-            name: "matches_won",
-            type: "int",
-            default: 0, // Default matches won to 0
+            name: "opponentA_uuid",
+            type: "varchar",
+            isNullable: true,
           },
           {
-            name: "games_won",
-            type: "int",
-            default: 0, // Default games won to 0
+            name: "opponentB_uuid",
+            type: "varchar",
+            isNullable: true,
           },
           {
-            name: "point",
-            type: "int",
-            default: 0, // Default games played to 0
+            name: "court_field_uuid",
+            type: "varchar",
           },
           {
-            name: "matches_played",
-            type: "int",
-            default: 0, // Default matches played to 0
+            name: "point_config_uuid",
+            type: "varchar",
+            isNullable: true,
+          },
+          {
+            name: "with_ad",
+            type: "boolean",
+            default: false,
+          },
+          {
+            name: "time",
+            type: "timestamp",
+            isNullable: true,
+          },
+          {
+            name: "notes",
+            type: "varchar",
+            isNullable: true,
+          },
+          {
+            name: "status",
+            type: "enum",
+            enum: ["OPEN", "ACCEPTED", "REJECTED", "COMPLETED", "CANCELLED"],
+            default: "'OPEN'",
           },
           {
             name: "createdBy",
@@ -75,7 +94,6 @@ export class TournamentGroupTeams1757354250407 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable("tournament_group_teams");
+    await queryRunner.dropTable("challengers");
   }
-
 }

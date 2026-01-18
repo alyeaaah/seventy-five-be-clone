@@ -1,15 +1,12 @@
 import * as log4js from "log4js";
-import axios from "axios";
-import { Container } from "typedi";
 
 export default class Util {
-  private logConf: any;
-  private logger: any;
-  private loggerError: any;
-  private redis: any;
+  private static instance: Util;
+  private readonly logConf: any;
+  private readonly logger: any;
+  private readonly loggerError: any;
 
-  constructor() {
-    this.redis = Container.get("redis");
+  private constructor() {
     this.logConf = {
       appenders: {
         api: {
@@ -73,15 +70,8 @@ export default class Util {
     );
   }
 
-  async redisget(key:string) : Promise<object> {
-    return JSON.parse(await this.redis.get(key));
-  }
-  async redisset(key:string, value:any){
-    await this.redis.set(key, JSON.stringify(value));
-  }
-  async redisdel(key:string){
-    await this.redis.del(key);
-  }
+  // Redis methods dihapus - gunakan RedisLib.getInstance() untuk akses Redis
+  // Method ini dihapus untuk menghindari duplikasi dengan RedisLib
 
   getNextSeed(currentMatch: { round: number; seedIndex: number }): {round:number, seedIndex:number, teamPosition: "home" | "away"} {
     const nextRound = currentMatch.round + 1;
@@ -94,4 +84,14 @@ export default class Util {
       teamPosition
     };
   }
+
+  // Singleton pattern untuk reuse instance
+  static getInstance(): Util {
+    if (!Util.instance) {
+      Util.instance = new Util();
+    }
+    return Util.instance;
+  }
+
+  // Redis methods dihapus - gunakan RedisLib.getInstance() untuk akses Redis
 }

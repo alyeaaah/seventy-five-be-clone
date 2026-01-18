@@ -140,8 +140,8 @@ const transformOrderData = (input: { data: MerchOrder[] }) => {
 };
 export default class ShopController {
   async getCart(req: any, res: any) {
-    const utilLib = new Util();
-    const redis = new RedisLib();
+    const utilLib = Util.getInstance();
+    const redis = RedisLib.getInstance();
     const playerUuid = req.data?.uuid;
     const cartKey = `cart:${playerUuid}`;
     let cart = await redis.redisget(cartKey);
@@ -154,8 +154,8 @@ export default class ShopController {
     res.json(cart);
   }
   async updateCart(req: any, res: any) {
-    const utilLib = new Util();
-    const redis = new RedisLib();
+    const utilLib = Util.getInstance();
+    const redis = RedisLib.getInstance();
     const playerUuid = req.data?.uuid;
     const cartKey = `cart:${playerUuid}`;
     const validatedBody = cartProductSchema.array().safeParse(req.body);
@@ -180,8 +180,8 @@ export default class ShopController {
     res.json({ message: "Cart updated", cart: newCart });
   }
   async checkoutCart(req: any, res: any) {
-    const utilLib = new Util();
-    const redis = new RedisLib();
+    const utilLib = Util.getInstance();
+    const redis = RedisLib.getInstance();
     const playerUuid = req.data?.uuid || undefined;
     const validatedBody = checkoutPayloadSchema.safeParse(req.body);
     if (validatedBody.error) {
@@ -325,7 +325,7 @@ export default class ShopController {
   }
 
   async orderHistory(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const playerUuid = req.data?.uuid;
     try {
       const merchOrderRepo = AppDataSource.getRepository(MerchOrder);
@@ -359,7 +359,7 @@ export default class ShopController {
     }
   }
   async orderDetail(req: any, res: any) { 
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const merchOrderRepo = AppDataSource.getRepository(MerchOrder);
@@ -389,11 +389,11 @@ export default class ShopController {
     }
   }
   async publicShippingFee(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const { destination, weight } = req.query;
       const source = "5902";
-      const redis = new RedisLib();
+      const redis = RedisLib.getInstance();
       // round the weight to 1000
       const roundedWeight = Math.ceil(Number(weight) / 1000) * 1000;
       const redisKey = `shipping-fee:${source}:${destination}:${roundedWeight}`;

@@ -3,11 +3,10 @@ import { Rule } from "../entities/Rule";
 import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
-import { Like, Not } from "typeorm";
 
 export default class RuleController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { tournament_uuid, description } = req.body;
     try {
       if (!tournament_uuid || !description) {
@@ -37,7 +36,7 @@ export default class RuleController {
     }
   }
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { description } = req.query;
     try {
@@ -57,7 +56,7 @@ export default class RuleController {
     }
   }
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const ruleRepo = AppDataSource.getRepository(Rule);

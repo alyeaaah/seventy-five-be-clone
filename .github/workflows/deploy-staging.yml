@@ -1,0 +1,69 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+        env:
+          PORT: ${{ secrets.PORT }}
+          DBHOST: ${{ secrets.DBHOST }}
+          DBPORT: ${{ secrets.DBPORT }}
+          DBUSER: ${{ secrets.DBUSER }}
+          DBPASS: ${{ secrets.DBPASS }}
+          DBNAME: ${{ secrets.DBNAME }}
+          RAJAONGKIR_API: ${{ secrets.RAJAONGKIR_API }}
+          RAJAONGKIR_BASE_URL: ${{ secrets.RAJAONGKIR_BASE_URL }}
+          JWTSECRET: ${{ secrets.JWTSECRET }}
+          REDISURL: ${{ secrets.REDISURL }}
+          CLOUNINARY_CLOUD_NAME: ${{ secrets.CLOUNINARY_CLOUD_NAME }}
+          CLOUNINARY_API_KEY: ${{ secrets.CLOUNINARY_API_KEY }}
+          CLOUNINARY_API_SECRET: ${{ secrets.CLOUNINARY_API_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+
+      - name: Prepare SSH key
+        run: |
+          echo "$PRIVATE_KEY" > key.pem
+          chmod 600 key.pem
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+
+      - name: Test SSH Connection
+        run: |
+          ssh -v -i key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy-sf@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
+
+      - name: Deploy via rsync over SSH
+        run: |
+          rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+            ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_STAGING_DEST }}
+
+      - name: Restart PM2 App
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "cd ${{ secrets.SERVER_STAGING_DEST }} && pm2 restart backend-sf"
+
+      - name: Cleanup
+        run: rm -f key.pem

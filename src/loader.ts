@@ -1,4 +1,5 @@
 import cors from 'cors';
+import compression from 'compression';
 import bodyParser from 'body-parser';
 import config from './config';
 import { createClient } from 'redis';
@@ -50,9 +51,20 @@ export default class Loaders {
       await this.typeormLoad();
       await this.setupRedis();
       await this.loadCloudinary();
-      this.app.use(bodyParser.json());
-      this.app.use(bodyParser.urlencoded({ extended: false }));
-      this.app.use(cors());
+      
+      // Compression middleware - harus diletakkan sebelum body parser
+      this.app.use(compression());
+      
+      // Body parser dengan limit yang lebih besar untuk upload
+      this.app.use(bodyParser.json({ limit: '10mb' }));
+      this.app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }));
+      
+      // CORS dengan optimasi
+      this.app.use(cors({
+        origin: process.env.CORS_ORIGIN || '*',
+        credentials: true,
+      }));
+      
       route(this.app);
     } catch (error:any) {
       console.log(error);

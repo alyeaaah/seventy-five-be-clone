@@ -1,0 +1,68 @@
+# Cursor AI Code Review Configuration
+
+## Review Focus Areas
+
+### Critical Issues (Must Fix)
+1. **Security vulnerabilities**
+   - SQL injection risks
+   - Authentication/authorization bypass
+   - Sensitive data exposure
+   - Input validation missing
+
+2. **Performance bottlenecks**
+   - N+1 query problems
+   - Missing database indexes
+   - Memory leaks
+   - Inefficient algorithms
+
+3. **Breaking changes**
+   - API contract changes
+   - Database schema changes without migration
+   - Breaking backward compatibility
+
+### High Priority (Should Fix)
+1. **Code quality**
+   - TypeScript errors
+   - Unused code/variables
+   - Code duplication
+   - Complex functions (>100 lines)
+
+2. **Best practices**
+   - Not using singleton pattern (Util/RedisLib)
+   - Using deprecated libraries (moment.js)
+   - Missing error handling
+   - Inconsistent patterns
+
+### Medium Priority (Nice to Have)
+1. **Code style**
+   - Inconsistent naming
+   - Missing comments for complex logic
+   - Code organization
+
+2. **Optimization opportunities**
+   - Missing caching
+   - Inefficient queries
+   - Unnecessary database calls
+
+## Review Commands
+
+### For Cursor AI:
+- "Review this code for performance issues"
+- "Check for security vulnerabilities"
+- "Find N+1 query problems"
+- "Verify error handling"
+- "Check if singleton pattern is used correctly"
+- "Review database query efficiency"
+- "Check for TypeScript best practices"
+
+## Automated Checks
+
+When reviewing, automatically check:
+- ✅ All `new Util()` → Should be `Util.getInstance()`
+- ✅ All `new RedisLib()` → Should be `RedisLib.getInstance()`
+- ✅ All `moment()` usage → Should use `date.util.ts`
+- ✅ All database queries have soft delete checks
+- ✅ All async functions have error handling
+- ✅ All endpoints have proper logging
+- ✅ All responses follow consistent format
+

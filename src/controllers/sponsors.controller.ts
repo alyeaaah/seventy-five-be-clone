@@ -6,7 +6,7 @@ import { IsNull, Not } from "typeorm";
 
 export default class SponsorsController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, description, media_url, type, slot } = req.body;
     try {
       if (!name || !description || !media_url || !type) {
@@ -40,7 +40,7 @@ export default class SponsorsController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -69,7 +69,7 @@ export default class SponsorsController {
   }
 
   async listSlot(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -99,7 +99,7 @@ export default class SponsorsController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const sponsorsRepo = AppDataSource.getRepository(Sponsors);
@@ -117,7 +117,7 @@ export default class SponsorsController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, description, media_url, type, slot } = req.body;
     try {
@@ -148,7 +148,7 @@ export default class SponsorsController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const sponsorsRepo = AppDataSource.getRepository(Sponsors);
@@ -165,7 +165,7 @@ export default class SponsorsController {
     }
   }
   async listSponsorBySlot(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { slot } = req.query;
     try {
       const sponsorsRepo = AppDataSource.getRepository(Sponsors);

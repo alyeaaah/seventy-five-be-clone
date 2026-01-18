@@ -6,7 +6,7 @@ import { Not } from "typeorm";
 
 export default class TagsController {
   async create(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { name, parent_uuid, type } = req.body;
     try {
       if (!name) {
@@ -34,7 +34,7 @@ export default class TagsController {
   }
 
   async list(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const page = parseInt((req.query.page as string) || "1");
       const limit = parseInt((req.query.limit as string) || "10");
@@ -69,7 +69,7 @@ export default class TagsController {
   }
 
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tagsRepo = AppDataSource.getRepository(Tags);
@@ -86,7 +86,7 @@ export default class TagsController {
   }
 
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     const { name, parent_uuid, type } = req.body;
     try {
@@ -110,7 +110,7 @@ export default class TagsController {
   }
 
   async delete(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { uuid } = req.params;
     try {
       const tagsRepo = AppDataSource.getRepository(Tags);

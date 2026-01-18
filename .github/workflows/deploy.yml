@@ -37,6 +37,12 @@ jobs:
           CLOUNINARY_CLOUD_NAME: ${{ secrets.CLOUNINARY_CLOUD_NAME }}
           CLOUNINARY_API_KEY: ${{ secrets.CLOUNINARY_API_KEY }}
           CLOUNINARY_API_SECRET: ${{ secrets.CLOUNINARY_API_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
 
       - name: Prepare SSH key
         run: |
@@ -52,12 +58,12 @@ jobs:
       - name: Deploy via rsync over SSH
         run: |
           rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
-            ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DEST }}
+            ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DEVELOP_DEST }}
 
       - name: Restart PM2 App
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ${{ secrets.SERVER_DEST }} && pm2 restart backend-sf"
+            "cd ${{ secrets.SERVER_DEVELOP_DEST }} && pm2 restart backend-sf"
 
       - name: Cleanup
         run: rm -f key.pem

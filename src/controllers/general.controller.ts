@@ -9,11 +9,11 @@ import { Matches, MatchStatus } from "../entities/Matches";
 import { TournamentSponsors } from "../entities/TournamentSponsors";
 import { Player } from "../entities/Player"; 
 import { MerchOrder, OrderStatus } from "../entities/MerchOrder";
-import moment from "moment";
+import { formatDate, calculateAge } from "../lib/date.util";
 
 export default class GeneralController {
   async report(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const result = {
         matches: {
@@ -70,7 +70,7 @@ export default class GeneralController {
     }
   }
   async topPlayer(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const playerRepo = AppDataSource.getRepository(Player);
       const topPlayer = await playerRepo.find({
@@ -91,8 +91,8 @@ export default class GeneralController {
               address: '*****',
               email: 'hidden_email@seventy.five',
               username: '********',
-              age: d.dateOfBirth ? Math.abs(moment(d.dateOfBirth).diff(moment(), 'years')) : undefined,
-              turnDate: d.turnDate ? moment(d.turnDate).format("YYYY-MM-DD") : undefined,
+              age: calculateAge(d.dateOfBirth),
+              turnDate: formatDate(d.turnDate),
             }));
       utilLib.loggingRes(req, { message: "Success", data: result })
       return res.status(200).json({ message: "Success", data: result });
@@ -102,7 +102,7 @@ export default class GeneralController {
     }
   }
   async upcomingTournament(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const tournamentRepo = AppDataSource.getRepository(Tournament);
       const upcoming = await tournamentRepo.find({

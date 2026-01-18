@@ -4,7 +4,7 @@ import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
 import { IsNull, Like, Not } from "typeorm";
 import bcrypt from "bcryptjs";
-import moment from "moment";
+// moment removed - not used in this file
 import { Levels } from "../entities/Levels";
 import { PlayerAddress } from "../entities/PlayerAddress";
 import { District } from "../entities/District";
@@ -15,7 +15,7 @@ import { fetchDistricts } from "../lib/seeder.lib";
 
 export default class PlayerController {
   async detail(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     if (!req.data?.uuid) {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -43,7 +43,7 @@ export default class PlayerController {
     }
   }
   async update(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     if (!req.data?.uuid) {
       return res.status(400).json({ message: "Player not found" });
     }
@@ -99,7 +99,7 @@ export default class PlayerController {
     }
   }
   async province(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     try {
       const provinceRepo = AppDataSource.getRepository(Province);
       const data = await provinceRepo.find({ order: { name: "ASC" } });
@@ -111,7 +111,7 @@ export default class PlayerController {
     }
   }
   async city(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { province_id } = req.query;
     try {
       const cityRepo = AppDataSource.getRepository(Cities);
@@ -136,7 +136,7 @@ export default class PlayerController {
     }
   }
   async district(req: any, res: any) {
-    const utilLib = new Util();
+    const utilLib = Util.getInstance();
     const { city_id } = req.query;
     try {
       const districtRepo = AppDataSource.getRepository(District);
