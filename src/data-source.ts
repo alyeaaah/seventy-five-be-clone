@@ -45,7 +45,6 @@ import { League } from "./entities/League";
 import { PlayerLog } from "./entities/PlayerLog";
 import { PlayerReview } from "./entities/PlayerReview";
 import { TournamentGroup } from "./entities/TournamentGroups";
-import { TournamentGroupTeam } from "./entities/TournamentGroupTeams";
 import { Challenger } from "./entities/Challenger";
 import { EmailVerification } from "./entities/EmailVerification";
 
@@ -111,7 +110,6 @@ const dataSourceOpt: DataSourceOptions = {
     PlayerLog,
     PlayerReview,
     TournamentGroup,
-    TournamentGroupTeam,
     Challenger,
     EmailVerification,
   ],

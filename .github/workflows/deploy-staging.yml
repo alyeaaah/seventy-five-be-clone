@@ -3,7 +3,7 @@ name: Deploy to VPS
 on:
   push:
     branches:
-      - develop
+      - staging
 
 jobs:
   build-and-deploy:
@@ -58,12 +58,12 @@ jobs:
       - name: Deploy via rsync over SSH
         run: |
           rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
-            ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DEVELOP_DEST }}
+            ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_STAGING_DEST }}
 
       - name: Restart PM2 App
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
-            "cd ${{ secrets.SERVER_DEVELOP_DEST }} && pm2 restart backend-sf"
+            "cd ${{ secrets.SERVER_STAGING_DEST }} && pm2 restart backend-sf"
 
       - name: Cleanup
         run: rm -f key.pem

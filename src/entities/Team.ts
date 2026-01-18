@@ -13,7 +13,6 @@ import { PlayerTeam } from "./PlayerTeam";
 import { Matches } from "./Matches";
 import { MatchHistories } from "./MatchHistories";
 import { TournamentGroup } from "./TournamentGroups";
-import { TournamentGroupTeam } from "./TournamentGroupTeams";
   
   @Entity("teams")
   export class Team {
@@ -90,7 +89,5 @@ import { TournamentGroupTeam } from "./TournamentGroupTeams";
     @OneToMany(() => MatchHistories, (matchHistories) => matchHistories.team)
     matchHistories: MatchHistories[] | undefined;
 
-    @OneToMany(() => TournamentGroupTeam, (tournamentGroupTeam) => tournamentGroupTeam.team)
-    tournamentGroupTeam: TournamentGroupTeam[] | undefined;
   }
   

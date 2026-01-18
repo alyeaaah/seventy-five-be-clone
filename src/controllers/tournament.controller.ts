@@ -7,6 +7,7 @@ import { In, IsNull, Like, MoreThan, Not } from "typeorm";
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { Matches } from "../entities/Matches";
 import { TournamentSponsors } from "../entities/TournamentSponsors";
+import { TournamentGroup } from "../entities/TournamentGroups";
 
 export default class TournamentController {
   async create(req: any, res: any) {

@@ -1,3 +1,4 @@
+import config from 'config';
 import nodemailer from 'nodemailer';
 
 export interface EmailOptions {
@@ -11,12 +12,12 @@ export class EmailService {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'mail.catchme.icu',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      host: config.smtp.host || 'mail.catchme.icu',
+      port: parseInt(config.smtp.port || '587'),
+      secure: config.smtp.secure === 'true',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: config.smtp.user,
+        pass: config.smtp.pass,
       },
     });
   }

@@ -26,6 +26,7 @@ export default class MatchController {
     this.endMatch = this.endMatch.bind(this);
     this.updateMatchStatus = this.updateMatchStatus.bind(this);
     this.updateMatch = this.updateMatch.bind(this);
+    this.updateTournamentGroup = this.updateTournamentGroup.bind(this);
     this.updateMultipleMatches = this.updateMultipleMatches.bind(this);
     this.updateSetScore = this.updateSetScore.bind(this);
     this.endSet = this.endSet.bind(this);
@@ -35,6 +36,7 @@ export default class MatchController {
     this.publicMatchList = this.publicMatchList.bind(this);
     this.publicMatchDetail = this.publicMatchDetail.bind(this);
     this.publicTournamentMatchList = this.publicTournamentMatchList.bind(this);
+    this.publicTournamentGroup = this.publicTournamentGroup.bind(this);
   }
   async create(req: any, res: any) {
     return this.matchAdministratorService.create(req, res);
@@ -106,5 +108,8 @@ export default class MatchController {
   }
   async publicTournamentMatchList(req: any, res: any) {
     return this.matchService.publicTournamentMatchList(req, res);
+  }
+  async publicTournamentGroup(req: any, res: any) {
+    return this.matchService.publicTournamentGroup(req, res);
   }
 }

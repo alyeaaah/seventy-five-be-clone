@@ -47,16 +47,63 @@ export const matchSchema = z.object({
   tournament: tournamentSchema.nullish(),
   court_field: courtFieldSchema.nullish(),
 });
+export const groupResponsePlayerSchema = z.object({
+  uuid: z.string().nullish(),
+  name: z.string().nullish(),
+  nickname: z.string().nullish(),
+  username: z.string().nullish(),
+  email: z.string().email().nullish(),
+  city: z.string().nullish().nullish(),
+  media_url: z.string().nullish(),
+  avatar_url: z.string().nullish(),
+  isVerified: z.boolean().nullish(),
+  featured: z.any().nullish(),
+  turnDate: z.string().nullish(), // ISO date string
+});
+const groupResponseTeamSchema = z.object({
+  uuid: z.string().nullish(),
+  name: z.string().nullish(),
+  alias: z.string().nullish(),
+  matches_won: z.number().nullish(),
+  games_won: z.number().nullish(),
+  point: z.number().nullish(),
+  matches_played: z.number().nullish(),
+  players: z.array(groupResponsePlayerSchema).nullish(),
+});
+export const groupResponseSchema =  z.object({
+  id: z.number(),
+  group_name: z.string(),
+  group_uuid: z.string(),
+  winner_uuid: z.string().nullish(),
+  createdBy: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date().nullish(),
+  teams: z.array(groupResponseTeamSchema).nullish(),
+});
+
+const matchPayloadSchema = z.object({
+  uuid: z.string().nullish(),
+  away_team_uuid: z.string(),
+  home_team_uuid: z.string(),
+  court_field_uuid: z.string(),
+  time: z.string(),
+  group_uuid: z.string().nullish(),
+  status: z.string().nullish(),
+  groupKey: z.number(),
+})
 
 export const updateGroupPayloadSchema = z.object({
   groups: z.array(z.object({
     uuid: z.string().nullish(),
+    groupKey: z.number(),
     name: z.string(),
     teams: z.array(z.object({
       uuid: z.string().nullish(),
       name: z.string(),
     })),
   })),
+  matches: z.array(matchPayloadSchema),
 });
+export type GroupResponseData = z.infer<typeof groupResponseSchema>;
 export type UpdateGroupPayloadData = z.infer<typeof updateGroupPayloadSchema>;
 export type MatchData = z.infer<typeof matchSchema>;

@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, BaseEntity, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, ManyToOne, JoinColumn } from "typeorm";
 import { Team } from "./Team";
 import { Tournament } from "./Tournament";
+import { Matches } from "./Matches";
 
 @Entity("tournament_groups")
 export class TournamentGroup extends BaseEntity {
@@ -37,7 +38,11 @@ export class TournamentGroup extends BaseEntity {
 
   @OneToMany(() => Team, (team) => team.group)
   teams: Team[] | undefined; 
+
+  @OneToMany(() => Matches, (match) => match.tournament_group)
+  matches: Matches[] | undefined; 
   
   @ManyToOne(() => Tournament, (tournament) => tournament.groups)
+  @JoinColumn({ name: 'tournament_uuid', referencedColumnName: 'uuid' })
   tournament: Tournament | undefined;
 }

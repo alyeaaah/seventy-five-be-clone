@@ -17,6 +17,7 @@ import { PointConfig } from "./PointConfig";
 import { MatchHistories } from "./MatchHistories";
 import { BlogContent } from "./BlogContents";
 import { PlayerKudos } from "./PlayerKudos";
+import { TournamentGroup } from "./TournamentGroups";
 
 export enum MatchStatus {
   UPCOMING = "UPCOMING",
@@ -51,6 +52,9 @@ export class Matches {
 
   @Column({nullable: true})
   tournament_group_index?: number;
+
+  @Column({ nullable: true })
+  group_uuid: string | null = null;
 
   @Column({nullable: true})
   home_group_index?: number;
@@ -148,6 +152,10 @@ export class Matches {
   @ManyToOne(() => PointConfig, (field) => field.uuid)
   @JoinColumn({ name: "point_config_uuid", referencedColumnName: "uuid" })
   point_config: PointConfig | undefined;
+
+  @ManyToOne(() => TournamentGroup)
+  @JoinColumn({ name: "group_uuid", referencedColumnName: "group_uuid" })
+  tournament_group: TournamentGroup | undefined;
 
   @OneToMany(() => MatchHistories, (matchHistories) => matchHistories.matches)
   matchHistories: MatchHistories[] | undefined;

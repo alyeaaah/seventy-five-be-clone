@@ -4,10 +4,11 @@ import { Brackets, In, IsNull } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
 import { Matches, MatchStatus } from "../entities/Matches";
+import { Team } from "../entities/Team";
+import { TournamentGroup } from "../entities/TournamentGroups";
 import { Player } from "../entities/Player";
 import { playerDummy } from "../lib/fake.lib";
-import { matchSchema } from "../schemas/tournament.schema";
-import { TournamentGroupTeam } from "../entities/TournamentGroupTeams";
+import { groupResponseSchema, matchSchema } from "../schemas/tournament.schema";
 
 export class MatchService {
   async list(req: any, res: any) {
@@ -741,20 +742,56 @@ export class MatchService {
       if (!dataExists) {
         throw new Error("Tournament not found!");
       }
-      const groupRepo = AppDataSource.getRepository(TournamentGroupTeam);
-      const data = await groupRepo.find({
+      const teamRepo = AppDataSource.getRepository(Team);
+      const tournamentGroupRepo = AppDataSource.getRepository(TournamentGroup);
+      
+      // Get all teams for this tournament
+      const teams = await teamRepo.find({
         where: {
           tournament_uuid: tournament_uuid,
-          deletedBy: IsNull(),
+          deletedAt: IsNull(),
         },
       });
-      // grouping data by group_uuid
-      const groupedData = data.reduce((acc: any, curr: any) => {
-        acc[curr.group_uuid] = acc[curr.group_uuid] || [];
-        acc[curr.group_uuid].push(curr);
-        return acc;
-      }, {});
-      return res.json({ data: groupedData });
+      
+      // Get all groups for this tournament
+      const groups = await tournamentGroupRepo.find({
+        where: {
+          tournament_uuid: tournament_uuid,
+          deletedAt: IsNull(),
+        },
+        relations: {
+          teams: {
+            players: {
+              player: true
+            }
+          },
+        },
+      });
+      
+      const groupedDatas  = groups.map(gd => ({
+        ...gd,
+        teams: gd.teams?.map(gdt => ({
+          ...gdt,
+          players: gdt.players?.map(gdp => ({
+            ...gdp.player,
+          })) || []
+        })) || [] 
+      }));
+      console.log(JSON.stringify(groupedDatas));
+      
+      // Group teams by group_uuid
+      const groupedData  = groups.map(gd => groupResponseSchema.parse({
+        ...gd,
+        teams: gd.teams?.map(gdt => ({
+          ...gdt,
+          players: gdt.players?.map(gdp => ({
+            ...gdp.player,
+          })) || []
+        })) || [] 
+      }));
+      
+      utilLib.loggingRes(req, { data: groupedDatas, message: "Tournament groups fetched successfully" });
+      return res.json({ data: groupedData, message: "Tournament groups fetched successfully" });
     } catch (error: any) {
       console.log(error);
       utilLib.loggingError(req, error.message);
@@ -762,3 +799,4 @@ export class MatchService {
     } 
   } 
 }
+
