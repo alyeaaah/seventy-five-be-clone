@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy to PROD
 
 on:
   push:
@@ -20,6 +20,29 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+      - name: Create .env file
+        run: |
+          cat <<EOF > .env
+          PORT=${{ secrets.PORT }}
+          DBHOST=${{ secrets.DBHOST }}
+          DBPORT=${{ secrets.DBPORT }}
+          DBUSER=${{ secrets.DBUSER }}
+          DBPASS=${{ secrets.DBPASS }}
+          DBNAME=${{ secrets.DBNAME }}
+          RAJAONGKIR_API=${{ secrets.RAJAONGKIR_API }}
+          RAJAONGKIR_BASE_URL=${{ secrets.RAJAONGKIR_BASE_URL }}
+          JWTSECRET=${{ secrets.JWTSECRET }}
+          REDISURL=${{ secrets.REDISURL }}
+          CLOUNINARY_CLOUD_NAME=${{ secrets.CLOUNINARY_CLOUD_NAME }}
+          CLOUNINARY_API_KEY=${{ secrets.CLOUNINARY_API_KEY }}
+          CLOUNINARY_API_SECRET=${{ secrets.CLOUNINARY_API_SECRET }}
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+          SMTP_FROM=${{ secrets.SMTP_FROM }}
+          SMTP_SECURE=${{ secrets.SMTP_SECURE }}
+          EOF
 
       - name: Build project
         run: npm run build
