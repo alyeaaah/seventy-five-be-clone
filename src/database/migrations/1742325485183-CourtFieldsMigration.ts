@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class CourtFieldsMigration1742325485183 implements MigrationInterface {
 
@@ -75,28 +75,10 @@ export class CourtFieldsMigration1742325485183 implements MigrationInterface {
       true
     );
 
-    // Add foreign key constraint for `court_uuid`
-    await queryRunner.createForeignKey(
-      "court_fields",
-      new TableForeignKey({
-        columnNames: ["court_uuid"],
-        referencedColumnNames: ["uuid"],
-        referencedTableName: "courts",
-        onDelete: "SET NULL",
-      })
-    );
 
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop foreign key constraint for `court_uuid`
-    const table = await queryRunner.getTable("court_fields");
-    const foreignKey = table?.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf("court_uuid") !== -1
-    );
-    if (foreignKey) {
-      await queryRunner.dropForeignKey("court_fields", foreignKey);
-    }
 
     // Drop the table
     await queryRunner.dropTable("court_fields");
