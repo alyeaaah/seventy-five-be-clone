@@ -30,7 +30,6 @@ export default {
     pass: process.env.SMTP_PASS,
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-    secure: process.env.SMTP_SECURE ? Boolean(process.env.SMTP_SECURE) : false,
     from: process.env.SMTP_FROM ? process.env.SMTP_FROM : "Seventy Five Club <noreply@seventyfive.club>"
   }
 };
