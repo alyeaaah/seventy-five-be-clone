@@ -1,9 +1,7 @@
 import {
   MigrationInterface,
   QueryRunner,
-  Table,
-  TableColumn,
-  TableForeignKey,
+  Table
 } from "typeorm";
 
 export class AddMerchCategory1753132804267 implements MigrationInterface {
@@ -41,27 +39,10 @@ export class AddMerchCategory1753132804267 implements MigrationInterface {
     //     isNullable: true,
     //   })
     // );
-
-    // // 3. Tambah foreign key
-    // await queryRunner.createForeignKey(
-    //   "merch_product",
-    //   new TableForeignKey({
-    //     columnNames: ["category_id"],
-    //     referencedTableName: "merch_category",
-    //     referencedColumnNames: ["id"],
-    //     onDelete: "SET NULL",
-    //   })
-    // );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     const table = await queryRunner.getTable("merch_product");
-    const foreignKey = table?.foreignKeys.find((fk) =>
-      fk.columnNames.includes("category_id")
-    );
-    if (foreignKey) {
-      await queryRunner.dropForeignKey("merch_product", foreignKey);
-    }
 
     await queryRunner.dropColumn("merch_product", "category_id");
     await queryRunner.dropTable("merch_category");

@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class PlayerMigration1742325939608 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -196,26 +196,10 @@ export class PlayerMigration1742325939608 implements MigrationInterface {
     );
 
     // Add foreign key constraint for `level_uuid`
-    await queryRunner.createForeignKey(
-      "players",
-      new TableForeignKey({
-        columnNames: ["level_uuid"],
-        referencedColumnNames: ["uuid"],
-        referencedTableName: "levels",
-        onDelete: "SET NULL",
-      })
-    );
+   
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop foreign key constraint for `level_uuid`
-    const table = await queryRunner.getTable("players");
-    const foreignKey = table?.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf("level_uuid") !== -1
-    );
-    if (foreignKey) {
-      await queryRunner.dropForeignKey("players", foreignKey);
-    }
 
     // Drop the table
     await queryRunner.dropTable("players");

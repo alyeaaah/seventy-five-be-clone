@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class PlayerKudosMigration1742326480614 implements MigrationInterface {
 
@@ -75,45 +75,10 @@ export class PlayerKudosMigration1742326480614 implements MigrationInterface {
             true
             );
 
-            // Add foreign key constraints
-            await queryRunner.createForeignKey(
-                "player_kudos",
-                new TableForeignKey({
-                    columnNames: ["player_uuid"],
-                    referencedColumnNames: ["uuid"],
-                    referencedTableName: "players",
-                    onDelete: "CASCADE",
-            })
-            );
-
-            await queryRunner.createForeignKey(
-                "player_kudos",
-                new TableForeignKey({
-                    columnNames: ["by_uuid"],
-                    referencedColumnNames: ["uuid"],
-                    referencedTableName: "players",
-                    onDelete: "CASCADE",
-                })
-            );
-
-            await queryRunner.createForeignKey(
-                "player_kudos",
-                new TableForeignKey({
-                    columnNames: ["kudos_uuid"],
-                    referencedColumnNames: ["uuid"],
-                    referencedTableName: "kudos",
-                    onDelete: "CASCADE",
-                })
-            );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        // Drop foreign key constraints
-        const table = await queryRunner.getTable("player_kudos");
-        const foreignKeys = table?.foreignKeys || [];
-        for (const foreignKey of foreignKeys) {
-        await queryRunner.dropForeignKey("player_kudos", foreignKey);
-        }
+    
 
         // Drop the table
         await queryRunner.dropTable("player_kudos");

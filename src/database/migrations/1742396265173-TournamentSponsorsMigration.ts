@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class TournamentSponsorsMigration1742396265173 implements MigrationInterface {
 
@@ -52,45 +52,12 @@ export class TournamentSponsorsMigration1742396265173 implements MigrationInterf
       true
     );
 
-    // Add foreign key constraint for `tournament_uuid`
-    await queryRunner.createForeignKey(
-      "tournamentSponsors",
-      new TableForeignKey({
-        columnNames: ["tournament_uuid"],
-        referencedColumnNames: ["uuid"],
-        referencedTableName: "tournaments",
-        onDelete: "NO ACTION",
-      })
-    );
 
     // Add foreign key constraint for `sponsor_uuid`
-    await queryRunner.createForeignKey(
-      "tournamentSponsors",
-      new TableForeignKey({
-        columnNames: ["sponsor_uuid"],
-        referencedColumnNames: ["uuid"],
-        referencedTableName: "sponsors",
-        onDelete: "NO ACTION",
-      })
-    );
+   
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-      // Drop foreign key constraints
-    const table = await queryRunner.getTable("tournamentSponsors");
-    const tournamentForeignKey = table?.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf("tournament_uuid") !== -1
-    );
-    const sponsorForeignKey = table?.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf("sponsor_uuid") !== -1
-    );
-
-    if (tournamentForeignKey) {
-      await queryRunner.dropForeignKey("tournamentSponsors", tournamentForeignKey);
-    }
-    if (sponsorForeignKey) {
-      await queryRunner.dropForeignKey("tournamentSponsors", sponsorForeignKey);
-    }
 
     // Drop the table
     await queryRunner.dropTable("tournamentSponsors");
