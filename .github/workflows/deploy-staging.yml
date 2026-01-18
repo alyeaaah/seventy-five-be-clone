@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        
+
       - name: Create .env file
         run: |
           cat <<EOF > .env
@@ -94,7 +94,7 @@ jobs:
 
       - name: Prepare SSH key
         run: |
-          echo "$PRIVATE_KEY" > key.pem
+          printf "%s" "$PRIVATE_KEY" > key.pem
           chmod 600 key.pem
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
