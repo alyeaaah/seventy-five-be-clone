@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table } from "typeorm";
 
 export class TagsMigration1742325457992 implements MigrationInterface {
 
@@ -66,27 +66,10 @@ export class TagsMigration1742325457992 implements MigrationInterface {
       true
     );
 
-    // Add foreign key constraint for `parent_uuid` (self-referencing)
-    await queryRunner.createForeignKey(
-      "tags",
-      new TableForeignKey({
-        columnNames: ["parent_uuid"],
-        referencedColumnNames: ["uuid"],
-        referencedTableName: "tags",
-        onDelete: "NO ACTION",
-      })
-    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop foreign key constraint for `parent_uuid`
-    const table = await queryRunner.getTable("tags");
-    const foreignKey = table?.foreignKeys.find(
-      (fk) => fk.columnNames.indexOf("parent_uuid") !== -1
-    );
-    if (foreignKey) {
-      await queryRunner.dropForeignKey("tags", foreignKey);
-    }
 
     // Drop the table
     await queryRunner.dropTable("tags");
