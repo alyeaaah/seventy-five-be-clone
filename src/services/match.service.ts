@@ -68,9 +68,9 @@ export class MatchService {
           home_team: {
             id: isHome ? match.home_team?.id : Number(match.round+''+match.seed_index),
             uuid: isHome ?  match.home_team?.uuid : match.home_team_uuid,
-            name: isHome ? match.home_team.name : match.home_team_uuid,
-            alias: isHome ? match.home_team.alias : match.home_team_uuid,
-            players: isHome ? match.home_team.players.map((player: any) => ({
+            name: isHome ? match.home_team?.name : match.home_team_uuid,
+            alias: isHome ? match.home_team?.alias : match.home_team_uuid,
+            players: isHome ? match.home_team?.players.map((player: any) => ({
               id: player.player?.id,
               uuid: player.player?.uuid,
               name: player.player?.name,
@@ -91,9 +91,9 @@ export class MatchService {
           away_team: {
             id: isAway ? match.away_team?.id : Number(match.round+''+match.seed_index),
             uuid: isAway ?  match.away_team?.uuid : match.away_team_uuid,
-            name: isAway ? match.away_team.name : match.away_team_uuid,
-            alias: isAway ? match.away_team.alias : match.away_team_uuid,
-            players: isAway ? match.away_team.players.map((player: any) => ({
+            name: isAway ? match.away_team?.name : match.away_team_uuid,
+            alias: isAway ? match.away_team?.alias : match.away_team_uuid,
+            players: isAway ? match.away_team?.players.map((player: any) => ({
               id: player.player?.id,
               uuid: player.player?.uuid,
               name: player.player?.name,
