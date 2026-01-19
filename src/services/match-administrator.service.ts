@@ -742,7 +742,13 @@ export class MatchAdministratorService {
           newMatch.createdBy = req.data?.uuid || undefined;
           return newMatch;
         });
-        await entityManager.save(newMatches);
+          await entityManager.save(newMatches);
+      }).catch((error) => {
+        utilLib.loggingError(req, error.message);
+        return res.status(400).json({ message: error.message });
+      }).then(d => {
+        utilLib.loggingRes(req, { message: "Match updated successfully" });
+        return res.status(200).json({ message: "Match updated successfully" });
       });
     } catch (error: any) {
       console.log(error);
