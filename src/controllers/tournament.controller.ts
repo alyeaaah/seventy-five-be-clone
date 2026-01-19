@@ -439,7 +439,7 @@ export default class TournamentController {
         .leftJoinAndSelect("tournament.level", "level")
       
       queryBuilder.where("(tournament.featured_at IS NOT NULL");
-      queryBuilder.andWhere("tournament.status = 'PUBLISHED'");
+      queryBuilder.andWhere("tournament.published_at IS NOT NULL");
       queryBuilder.andWhere("tournament.featured_at >= :date", { date: new Date(new Date().setMonth(new Date().getMonth() - 2)) });
       queryBuilder.andWhere("tournament.end_date >= :date", { date: new Date(new Date().setDate(new Date().getDay() - 1)) });
       queryBuilder.andWhere("tournament.deletedAt IS NULL)");
@@ -448,7 +448,7 @@ export default class TournamentController {
       let [data, count] = await queryBuilder.getManyAndCount();
       if (limit && count < limit) {
         queryBuilder.orWhere("(tournament.featured_at IS NOT NULL");
-        queryBuilder.andWhere("tournament.status = 'PUBLISHED'");
+        queryBuilder.andWhere("tournament.published_at IS NOT NULL");
         queryBuilder.andWhere("tournament.end_date >= :date", { date: new Date(new Date().setDate(new Date().getDay() - 1)) });
         queryBuilder.andWhere("tournament.deletedAt IS NULL)");
         queryBuilder.limit(limit - count);
@@ -458,7 +458,7 @@ export default class TournamentController {
       }
       if (limit && count < limit) {
         queryBuilder.orWhere("(tournament.featured_at IS NULL");
-        queryBuilder.andWhere("tournament.status = 'PUBLISHED'");
+        queryBuilder.andWhere("tournament.published_at IS NOT NULL");
         queryBuilder.andWhere("tournament.end_date >= :date", { date: new Date(new Date().setDate(new Date().getDay() - 1)) });
         queryBuilder.andWhere("tournament.deletedAt IS NULL)");
         queryBuilder.limit(limit - count);
