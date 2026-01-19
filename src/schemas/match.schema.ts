@@ -8,7 +8,7 @@ export const updateMatchPayloadSchema = z.object({
   home_team_uuid: z.string(),
   away_team_uuid: z.string(),
   court_field_uuid: z.string().nullable().nullish(),
-  status: MatchStatusEnum,
+  status: MatchStatusEnum.nullish(),
   time: z.string().nullish(), // Will be converted to Date in the service
   round: z.number(),
   group: z.number(), // maps to tournament_group_index
