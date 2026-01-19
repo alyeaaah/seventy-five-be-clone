@@ -10,7 +10,7 @@ import RedisLib from "../lib/redis.lib";
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { TournamentGroup } from "../entities/TournamentGroups";
 import { updateGroupPayloadSchema, UpdateGroupPayloadData } from "../schemas/tournament.schema";
-import { updateMatchPayloadSchema, updateMultipleMatchesPayloadSchema } from "../schemas/match.schema";
+import { updateMatchPayloadSchema, updateMultipleMatchesPayloadSchema, UpdateMatchPayload } from "../schemas/match.schema";
 
 export class MatchAdministratorService {
   async create(req: any, res: any) {
@@ -723,25 +723,26 @@ export class MatchAdministratorService {
           await entityManager.save(existingMatch);
         }
         // add new matches
-        for (const match of matches) {
+        const newMatches = matches.map((match: UpdateMatchPayload) => {
           const newMatch = new Matches();
           newMatch.uuid = uuidv4();
           newMatch.tournament_uuid = tournament_uuid;
           newMatch.home_team_uuid = match.home_team_uuid;
           newMatch.away_team_uuid = match.away_team_uuid;
-          newMatch.court_field_uuid = match.court_field_uuid;
-          newMatch.status = match.status || MatchStatus.UPCOMING;
-          newMatch.time = match.date ? new Date(match.date) : undefined;
-          newMatch.round = match.round;
-          newMatch.tournament_group_index = match.group;
-          newMatch.home_group_index = match.home_group_index;
-          newMatch.home_group_position = match.home_group_position;
-          newMatch.away_group_index = match.away_group_index;
-          newMatch.away_group_position = match.away_group_position;
-          newMatch.seed_index = match.seed_index;
+          newMatch.court_field_uuid = match.court_field_uuid || null;
+          newMatch.status = (match.status as MatchStatus) || MatchStatus.UPCOMING;
+          newMatch.time = match.time ? new Date(match.time) : undefined;
+          newMatch.round = match.round || 0;
+          newMatch.tournament_group_index = match.group || undefined;
+          newMatch.home_group_index = match.home_group_index || undefined;
+          newMatch.home_group_position = match.home_group_position || undefined;
+          newMatch.away_group_index = match.away_group_index || undefined;
+          newMatch.away_group_position = match.away_group_position || undefined;
+          newMatch.seed_index = match.seed_index || 0;
           newMatch.createdBy = req.data?.uuid || undefined;
-          await entityManager.save(newMatch);
-        }
+          return newMatch;
+        });
+        await entityManager.save(newMatches);
       });
     } catch (error: any) {
       console.log(error);
