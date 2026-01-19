@@ -467,11 +467,17 @@ export default class TournamentController {
         count += newCount;
       }
 
-      const result = data.map((d) => ({
+      // Remove duplicates based on tournament UUID
+      const uniqueData = data.filter((tournament, index, self) =>
+        index === self.findIndex((t) => t.uuid === tournament.uuid)
+      );
+
+      const result = uniqueData.map((d) => ({
         ...d,
         court: d.court?.name,
         level: d.level?.name,
       }));
+      
       utilLib.loggingRes(req, { data: result, message: "Tournament featured fetched successfully" });
       return res.json({ data: result, message: "Tournament featured fetched successfully" });
     } catch (error: any) {
