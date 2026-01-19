@@ -207,7 +207,7 @@ export class MatchAdministratorService {
             newMatch.court_field_uuid = m.court_field_uuid;
             newMatch.status = m.status;
             newMatch.time = m.time ? new Date(m.time) : undefined;
-            newMatch.round = m.round;
+            newMatch.round = m.round !== undefined ? m.round : null;
             newMatch.tournament_group_index = m.group;
             newMatch.seed_index = m.seed_index || null;
             newMatch.home_group_index = m.home_group_index;
@@ -233,7 +233,7 @@ export class MatchAdministratorService {
               dataExists.court_field_uuid = m.court_field_uuid;
               dataExists.status = m.status;
               dataExists.time = m.time ? new Date(m.time) : undefined;
-              dataExists.round = m.round;
+            dataExists.round = m.round !== undefined ? m.round : null;
               dataExists.tournament_group_index = m.group;
               dataExists.home_group_index = m.home_group_index;
               dataExists.home_group_position = m.home_group_position;
@@ -253,7 +253,7 @@ export class MatchAdministratorService {
               newMatch.court_field_uuid = m.court_field_uuid;
               newMatch.status = m.status;
               newMatch.time = m.time ? new Date(m.time) : undefined;
-              newMatch.round = m.round;
+              newMatch.round = m.round !== undefined ? m.round : null;
               newMatch.tournament_group_index = m.group;
               newMatch.seed_index = m.seed_index || index;
               newMatch.home_group_index = m.home_group_index;

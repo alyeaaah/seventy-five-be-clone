@@ -642,8 +642,8 @@ export class MatchService {
         .andWhere("matches.deletedBy IS NULL")
         .andWhere("away_players.deletedBy IS NULL")
         .andWhere("home_players.deletedBy IS NULL")
-        .orderBy("matches.seed_index", "ASC")
-        .orderBy("matches.round", "ASC");
+        .orderBy("matches.round", "ASC")
+        .orderBy("matches.seed_index", "ASC");
       if (page && limit) {
         queryBuilder
           .skip((Number(page) - 1) * Number(limit))

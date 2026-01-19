@@ -195,7 +195,7 @@ export default class TournamentController {
         data.court_uuid = court_uuid || data.court_uuid;
         data.level_uuid = level_uuid || data.level_uuid;
         data.point_config_uuid = point_config_uuid || data.point_config_uuid;
-        data.strict_level = strict_level || data.strict_level;
+        data.strict_level = strict_level === undefined || strict_level === null ? data.strict_level : strict_level;
         data.league_id = league_id || data.league_id;
         data.total_group = total_group || data.total_group;
       
