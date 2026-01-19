@@ -53,7 +53,7 @@ export default class PlayerController {
           throw new Error("Username already exists!");
         }
         const hashedPassword: any = await new Promise((resolve, reject) => {
-        bcrypt.hash(password || formatDateCompact(dateOfBirth)+height, 10, function (err, hash) {
+        bcrypt.hash(password || "75TennisClub"+nickname, 10, function (err, hash) {
           if (err) reject(err);
           resolve(hash);
         });
@@ -100,6 +100,81 @@ export default class PlayerController {
       return res.status(400).json({ message: error.message });
     }
   }
+
+  async quickCreate(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { name, nickname, gender, password, level_uuid, league_id } = req.body;
+    try {
+      if (!name || !nickname || !gender || !league_id) {
+        throw new Error("All fields are required!");
+      }
+      if (gender && gender != "m" && gender != "f") {
+        throw new Error("Gender should be m or f!");
+      }
+
+      await AppDataSource.transaction(async (entityManager) => {
+        const playerRepo = entityManager.getRepository(Player);
+
+        const baseUsername = (nickname || name)
+          .toString()
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "");
+
+        let username = `${baseUsername || "player"}${Math.floor(1000 + Math.random() * 9000)}`;
+        for (let i = 0; i < 10; i++) {
+          const exists = await playerRepo.findOne({ where: { username } });
+          if (!exists) break;
+          username = `${baseUsername || "player"}${Math.floor(1000 + Math.random() * 9000)}${i}`;
+          if (i === 9) {
+            username = `${baseUsername || "player"}${uuidv4().replace(/-/g, "").slice(0, 8)}`;
+            const existsFinal = await playerRepo.findOne({ where: { username } });
+            if (existsFinal) {
+              throw new Error("Failed to generate unique username!");
+            }
+          }
+        }
+
+        const hashedPassword: any = await new Promise((resolve, reject) => {
+          bcrypt.hash(password || nickname, 10, function (err, hash) {
+            if (err) reject(err);
+            resolve(hash);
+          });
+        });
+
+        const newPlayer = new Player();
+        newPlayer.uuid = uuidv4();
+        newPlayer.name = name;
+        newPlayer.nickname = nickname;
+        newPlayer.username = username;
+        newPlayer.email = `${username}@seventyfive.club`;
+        newPlayer.password = hashedPassword;
+        newPlayer.phoneNumber = ``;
+        newPlayer.skills = JSON.stringify({});
+        newPlayer.placeOfBirth = "";
+        newPlayer.isVerified = false;
+        newPlayer.gender = gender;
+        newPlayer.level_uuid = level_uuid;
+        newPlayer.league_id = league_id;
+        newPlayer.createdBy = req.data?.uuid || undefined;
+
+        const data = await entityManager.save(newPlayer);
+        const result = {
+          ...data,
+          skills: data.skills ? JSON.parse(data.skills) : undefined,
+          phone: data.phoneNumber,
+          dateOfBirth: formatDate(data.dateOfBirth),
+          turnDate: formatDate(data.turnDate),
+        };
+        utilLib.loggingRes(req, { data: result });
+        return res.json({ data: result });
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
   async list(req: any, res: any) {
     const utilLib = Util.getInstance();
     const { attr } = req.params;
