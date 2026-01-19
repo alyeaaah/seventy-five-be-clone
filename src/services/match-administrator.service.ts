@@ -730,7 +730,7 @@ export class MatchAdministratorService {
           newMatch.home_team_uuid = match.home_team_uuid;
           newMatch.away_team_uuid = match.away_team_uuid;
           newMatch.court_field_uuid = match.court_field_uuid;
-          newMatch.status = match.status;
+          newMatch.status = match.status || MatchStatus.UPCOMING;
           newMatch.time = match.date ? new Date(match.date) : undefined;
           newMatch.round = match.round;
           newMatch.tournament_group_index = match.group;
