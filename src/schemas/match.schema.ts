@@ -10,8 +10,8 @@ export const updateMatchPayloadSchema = z.object({
   court_field_uuid: z.string().nullable().nullish(),
   status: MatchStatusEnum.nullish(),
   time: z.string().nullish(), // Will be converted to Date in the service
-  round: z.number(),
-  group: z.number(), // maps to tournament_group_index
+  round: z.number().nullish(),
+  group: z.number().nullish(), // maps to tournament_group_index
   seed_index: z.number().nullish(),
   home_group_index: z.number().nullish(),
   home_group_position: z.number().nullish(),
