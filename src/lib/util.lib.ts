@@ -72,7 +72,7 @@ export default class Util {
 
   // Redis methods dihapus - gunakan RedisLib.getInstance() untuk akses Redis
   // Method ini dihapus untuk menghindari duplikasi dengan RedisLib
-
+  
   getNextSeed(currentMatch: { round: number; seedIndex: number }): {round:number, seedIndex:number, teamPosition: "home" | "away"} {
     const nextRound = currentMatch.round + 1;
     const nextSeedIndex = Math.ceil(currentMatch.seedIndex / 2);

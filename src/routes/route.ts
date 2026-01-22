@@ -103,6 +103,7 @@ export const route = (router: Router) => {
   router.put("/api/player/edit/:uuid", logMiddleware, authMiddleware, playerCon.update);
   router.put("/api/player/role/:uuid", logMiddleware, authMiddleware, playerCon.updateRole);
   router.put("/api/player/verify/:uuid", logMiddleware, authMiddleware, playerCon.update);
+  router.put("/api/player/update-access/:uuid", logMiddleware, authMiddleware, playerCon.updateAccess);
   router.delete("/api/player/delete/:uuid", logMiddleware, authMiddleware, playerCon.delete);
 
   // Tournament
@@ -144,6 +145,7 @@ export const route = (router: Router) => {
   router.get("/api/match/player", logMiddleware, authMiddleware, (req, res) => matchCon.playerMatches(req, res));
   router.put("/api/match/custom/:uuid", logMiddleware, authMiddleware, matchCon.updateCustom);
   router.put("/api/match/score-update/:uuid", logMiddleware, authMiddleware, matchCon.updateScore);
+  router.post("/api/match/next-round/:uuid", logMiddleware, authMiddleware, matchCon.updateNextRound);
   router.put("/api/match/status/:uuid", logMiddleware, authMiddleware, matchCon.updateMatchStatus);
   router.put("/api/match/video-url/:uuid", logMiddleware, authMiddleware, matchCon.updateVideoURL);
   router.delete("/api/match/:uuid", logMiddleware, authMiddleware, matchCon.delete);

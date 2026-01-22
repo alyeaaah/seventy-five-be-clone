@@ -319,6 +319,8 @@ export class MatchService {
           name: `${match.court_field?.court?.name} - ${match.court_field?.name}`,
         }: undefined,
       }));
+      console.log(matchHistories);
+      
       const result = matchHistories.map((match) => matchSchema.parse(match));
       utilLib.loggingRes(req, { data: result, message: "Matches fetched successfully!" });
       return res.json({ data: result, message: "Matches fetched successfully!" });

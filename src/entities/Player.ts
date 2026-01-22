@@ -138,6 +138,9 @@ export class Player {
   @Column({ type: "enum", nullable: false, enum: RoleEnum, default: RoleEnum.PLAYER })
   role: string = RoleEnum.PLAYER;
 
+  @Column({ default: false })
+  isReferee: boolean = false;
+
   @CreateDateColumn({ type: "timestamp" })
   createdAt: Date = new Date();
 

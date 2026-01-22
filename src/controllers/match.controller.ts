@@ -22,6 +22,7 @@ export default class MatchController {
     this.list = this.list.bind(this);
     this.detail = this.detail.bind(this);
     this.updateScore = this.updateScore.bind(this);
+    this.updateNextRound = this.updateNextRound.bind(this);
     this.updateVideoURL = this.updateVideoURL.bind(this);
     this.endMatch = this.endMatch.bind(this);
     this.updateMatchStatus = this.updateMatchStatus.bind(this);
@@ -65,6 +66,9 @@ export default class MatchController {
 
   async updateScore(req: any, res: any) {
     return this.matchScoreService.updateScore(req, res);
+  }
+  async updateNextRound(req: any, res: any) {
+    return this.matchScoreService.updateNextRound(req, res);
   }
   async updateVideoURL(req:any, res:any) {
     return this.matchAdministratorService.updateVideoURL(req, res);

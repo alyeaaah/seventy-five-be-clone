@@ -43,8 +43,23 @@ export class MatchScoreService {
         if (!data) {
           throw new Error("Match not found!");
         }
-        if (data.status == MatchStatus.ENDED) {
-          throw new Error("Match already ended!");
+        if (data.status == MatchStatus.ENDED && status !== "RESET") {
+
+          const responses = {
+            message: "reload",
+            data: { ...data,
+              home_team: {
+                ...data.home_team,
+                players: null
+              },
+              away_team: {
+                ...data.away_team,
+                players: null
+              }
+            }
+          };
+          
+          return res.status(206).json(responses);
         }
         data.home_team_score = home_team_score;
         data.away_team_score = away_team_score;
@@ -56,9 +71,15 @@ export class MatchScoreService {
           data.winner_team_uuid = data.away_team_uuid;
           data.status = MatchStatus.ENDED;
         }
+        if (status === "RESET") {
+          data.home_team_score = 0;
+          data.away_team_score = 0;
+          data.winner_team_uuid = '';
+          data.status = MatchStatus.UPCOMING;
+        }
+        
         await transactionalEntityManager.save(data);
-
-        if (data.status == MatchStatus.ENDED) {
+        if (data.status == MatchStatus.ENDED && status !== "RESET") {
           // BEGIN: set player point
           let rewardPoint: MatchPoint | undefined = undefined;
           if (data.tournament_uuid) {
@@ -66,37 +87,39 @@ export class MatchScoreService {
             const point = await tournamentRepo.findOne({
               select: ["point_config", "point_config"],
               where: {
-                uuid: data.tournament_uuid, point_config: { points: { round: data.round } }
+                uuid: data.tournament_uuid, point_config: { points: { round: data.round != null && data.round != undefined ? data.round + 1 : 1 } }
               },
               relations: ["point_config", "point_config.points"]
             });
-            if (point?.type === typeTournamentEnum.KNOCKOUT) {
+            // if (point?.type === typeTournamentEnum.KNOCKOUT) {
 
-              // BEGIN: update next match
-              // check if this match is a knockout tournament match
-              const nextSeed = utilLib.getNextSeed({ round: data.round, seedIndex: data.seed_index || 0 });
-              const nextMatch = await matchesRepo.findOne({
-                where: {
-                  tournament_uuid: data.tournament_uuid,
-                  round: nextSeed.round,
-                  seed_index: nextSeed.seedIndex
-                }
-              });
-              if (nextMatch) {
-                if (nextSeed.teamPosition == "home") {
-                  nextMatch.home_team_uuid = data.winner_team_uuid;
-                } else {
-                  nextMatch.away_team_uuid = data.winner_team_uuid;
-                }
-                nextMatch.status =
-                  !["TBD", "BYE"].includes((!!nextMatch.home_team_uuid ? nextMatch.home_team_uuid : "TBD")) &&
-                  !["TBD", "BYE"].includes((!!nextMatch.away_team_uuid ? nextMatch.away_team_uuid : "TBD"))
-                    ? MatchStatus.ONGOING : MatchStatus.UPCOMING;
-                await transactionalEntityManager.save(nextMatch);
-              }
-            // END: update next match
-              
-            }
+            //   // BEGIN: update next round
+            //   // check if this match is a knockout tournament match
+            //   const nextSeed = utilLib.getNextSeed({
+            //     round: data.round != null && data.round != undefined ? data.round + 1 : 1,
+            //     seedIndex: data.seed_index != null && data.seed_index != undefined ? data.seed_index+1 : 0
+            //   });
+            //   const nextMatch = await matchesRepo.findOne({
+            //     where: {
+            //       tournament_uuid: data.tournament_uuid,
+            //       round: nextSeed.round,
+            //       seed_index: nextSeed.seedIndex
+            //     }
+            //   });
+            //   if (nextMatch) {
+            //     if (nextSeed.teamPosition == "home") {
+            //       nextMatch.home_team_uuid = data.winner_team_uuid;
+            //     } else {
+            //       nextMatch.away_team_uuid = data.winner_team_uuid;
+            //     }
+            //     nextMatch.status =
+            //       !["TBD", "BYE"].includes((!!nextMatch.home_team_uuid ? nextMatch.home_team_uuid : "TBD")) &&
+            //       !["TBD", "BYE"].includes((!!nextMatch.away_team_uuid ? nextMatch.away_team_uuid : "TBD"))
+            //         ? MatchStatus.ONGOING : MatchStatus.UPCOMING;
+            //     await transactionalEntityManager.save(nextMatch);
+            //   }
+            // }
+            // // END: update next match
             rewardPoint = !!point?.point_config?.points?.length ? point.point_config.points[0] : undefined;
           } else {
             const pointConfigRepo = AppDataSource.getRepository(PointConfig);
@@ -213,7 +236,118 @@ export class MatchScoreService {
             await transactionalEntityManager.save(matchHistory);
           }
         }
+        if (status === "RESET") {
+          // soft delete match histories
+          const pmpRepo = transactionalEntityManager.getRepository(PlayerMatchPoint);
+          const playerRepo = transactionalEntityManager.getRepository(Player);
+          const playersPoint = await pmpRepo.find({ where: { match_uuid: uuid, deletedAt: IsNull() } });
+          for (const pp of playersPoint) {
+            const player = await playerRepo.findOne({ where: { uuid: pp.player_uuid, deletedAt: IsNull() } });
+            if (player) {
+              // TODO: update player point
+              player.point = player.point - pp.point;
+              player.point_updated_at = new Date();
+              await transactionalEntityManager.save(player);
+            }
+          }
+          await transactionalEntityManager.update(MatchHistories, { match_uuid: uuid, deletedAt: IsNull() }, {
+            deletedAt: new Date(),
+          });
+          await transactionalEntityManager.update(PlayerMatchPoint, { match_uuid: uuid, deletedAt: IsNull() }, {
+            deletedAt: new Date(),
+            deletedBy: req.data?.uuid || undefined,
+          });
+        }
+
+        const responses = {
+          message: "Match updated successfully!",
+          data: { ...data,
+            home_team: {
+              ...data.home_team,
+              players: null
+            },
+            away_team: {
+              ...data.away_team,
+              players: null
+            }
+          }
+        };
         
+        utilLib.loggingRes(req, responses);
+        return res.json(responses);
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+  async updateNextRound(req: any, res: any) {
+    const utilLib = Util.getInstance();
+
+    const { uuid: matchUUID } = req.params;
+    try {
+      if (!matchUUID) {
+        throw new Error("Match UUID is required!");
+      }
+      await AppDataSource.transaction(async (transactionalEntityManager) => {
+        // check Exist
+        const matchesRepo = AppDataSource.getRepository(Matches);
+        const data = await matchesRepo.findOne({
+          where: { uuid: matchUUID },
+          relations: {
+            home_team: {
+              players: true
+            },
+            away_team: {
+              players: true
+            },
+          }
+        });
+        if (!data) {
+          throw new Error("Match not found!");
+        }
+        if (data.status != MatchStatus.ENDED) {
+          throw new res.status(400).json({ message: "Match not ended yet!" });
+        }
+        if (data.status == MatchStatus.ENDED ) {
+          const tournament = await transactionalEntityManager.getRepository(Tournament).findOne({
+            where: {
+              uuid: data.tournament_uuid,
+              deletedAt: IsNull()
+            }
+          });
+
+          if (tournament?.type === typeTournamentEnum.KNOCKOUT) {
+            // BEGIN: update next round
+            // check if this match is a knockout tournament match
+            const nextSeed = utilLib.getNextSeed({
+              round: data.round != null && data.round != undefined ? data.round + 1 : 1,
+              seedIndex: data.seed_index != null && data.seed_index != undefined ? data.seed_index+1 : 0
+            });
+            const nextMatch = await matchesRepo.findOne({
+              where: {
+                tournament_uuid: data.tournament_uuid,
+                round: nextSeed.round - 1,
+                seed_index: nextSeed.seedIndex - 1
+              }
+            });
+            if (nextMatch) {
+              if (nextSeed.teamPosition == "home") {
+                nextMatch.home_team_uuid = data.winner_team_uuid;
+              } else {
+                nextMatch.away_team_uuid = data.winner_team_uuid;
+              }
+              nextMatch.status =
+                !["TBD", "BYE"].includes((!!nextMatch.home_team_uuid ? nextMatch.home_team_uuid : "TBD")) &&
+                !["TBD", "BYE"].includes((!!nextMatch.away_team_uuid ? nextMatch.away_team_uuid : "TBD"))
+                  ? MatchStatus.ONGOING : MatchStatus.UPCOMING;
+              console.log("\n nextmatch22--------\n",nextMatch);
+              
+              await transactionalEntityManager.save(nextMatch);
+            }
+          }
+            // END: update next match
+        }
         utilLib.loggingRes(req, { data, message: "Match updated successfully!" });
         return res.json({ data, message: "Match updated successfully!" });
       });
@@ -276,14 +410,14 @@ export class MatchScoreService {
         let playerCoin = 0;
         const tmRepo = AppDataSource.getRepository(TournamentMatchPoint);
         const tmData = await tmRepo.findOneBy({
-          round: data.round,
+          round: data.round != undefined && data.round != null ? data.round : 1,
           tournament_uuid: data.tournament_uuid,
         });
 
         let mpUuid = "";
         const mpRepo = AppDataSource.getRepository(MatchPoint);
         const mpData = await mpRepo.findOneBy({
-          round: data.round,
+          round: data.round != undefined && data.round != null ? data.round : 1,
         });
 
         if (tmData) {
@@ -310,7 +444,7 @@ export class MatchScoreService {
               newPlayerPoint.coin = playerCoin || 0;
               newPlayerPoint.match_uuid = data.uuid;
               newPlayerPoint.tournament_uuid = data.tournament_uuid;
-              newPlayerPoint.round = data.round;
+              newPlayerPoint.round = data.round != null && data.round != undefined ? data.round + 1 : 1;
               newPlayerPoint.match_point_uuid = mpUuid;
               newPlayerPoint.tournament_match_point_uuid = mpUuid;
               newPlayerPoint.createdBy = req.data?.uuid || undefined;

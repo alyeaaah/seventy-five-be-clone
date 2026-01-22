@@ -6,7 +6,7 @@ import { IsNull, Like, MoreThan, Not } from "typeorm";
 import bcrypt from "bcryptjs";
 import { formatDate, formatDateCompact, calculateAge } from "../lib/date.util";
 import { Levels } from "../entities/Levels";
-import { registerSchema } from "../schemas/player.schema";
+import { registerSchema, updateAccessPayloadSchema } from "../schemas/player.schema";
 import { League } from "../entities/League";
 import { EmailVerification } from "../entities/EmailVerification";
 import { emailService } from "../services/email.service";
@@ -695,6 +695,87 @@ export default class PlayerController {
       };
       utilLib.loggingRes(req, { data: result });
       return res.json({ data: result });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async updateAccess(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    
+    try {
+      // Check if the requester is an admin
+      console.log(req.data);
+      
+      if (req.data.role !== 'ADMIN' && req.data.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+
+      // Validate request body
+      const validationResult = updateAccessPayloadSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationResult.error.errors 
+        });
+      }
+
+      const { username, email, password, isReferee } = validationResult.data;
+
+      const playerRepo = AppDataSource.getRepository(Player);
+      const player = await playerRepo.findOneBy({ uuid });
+      
+      if (!player) {
+        return res.status(404).json({ message: "Player not found" });
+      }
+
+      // Check if username is already taken by another player
+      const existingUsername = await playerRepo.findOneBy({ 
+        username, 
+        uuid: Not(player.uuid) 
+      });
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Check if email is already taken by another player
+      const existingEmail = await playerRepo.findOneBy({ 
+        email, 
+        uuid: Not(player.uuid) 
+      });
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Hash the password using the same pattern as existing code
+      const hashedPassword: any = await new Promise((resolve, reject) => {
+        bcrypt.hash(password, 10, function (err, hash) {
+          if (err) reject(err);
+          resolve(hash);
+        });
+      });
+
+      // Update player fields
+      player.username = username;
+      player.email = email;
+      player.password = hashedPassword;
+      player.isReferee = isReferee;
+
+      const savedPlayer = await playerRepo.save(player);
+
+      const result = {
+        ...savedPlayer,
+        skills: savedPlayer.skills ? JSON.parse(savedPlayer.skills) : undefined,
+        phone: savedPlayer.phoneNumber,
+        dateOfBirth: formatDate(savedPlayer.dateOfBirth),
+        turnDate: formatDate(savedPlayer.turnDate),
+        password: undefined // Don't return password in response
+      };
+
+      utilLib.loggingRes(req, { data: result, message: "Player access updated successfully" });
+      return res.json({ data: result, message: "Player access updated successfully" });
     } catch (error: any) {
       utilLib.loggingError(req, error.message);
       return res.status(400).json({ message: error.message });

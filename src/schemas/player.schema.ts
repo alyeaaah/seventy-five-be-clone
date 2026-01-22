@@ -56,11 +56,11 @@ export const playerSchema = z.object({
   nickname: z.string(),
   username: z.string(),
   city: z.string(),
-  media_url: z.string(),
+  media_url: z.string().nullish(),
   avatar_url: z.string().nullish(),
-  height: z.number(),
-  point: z.number(),
-  gender: z.string(),
+  height: z.number().nullish(),
+  point: z.number().nullish(),
+  gender: z.string().nullish(),
   level_uuid: z.string().nullish(),
 });
 
@@ -75,5 +75,17 @@ export const teamSchema = z.object({
   uuid: z.string(),
   name: z.string(),
   alias: z.string(),
-  players: z.array(teamPlayerSchema),
+  players: z.array(teamPlayerSchema).nullish(),
+});
+
+export const updateAccessPayloadSchema = z.object({
+  username: z.string().min(2, "Username must be at least 2 characters long"),
+  email: z.string().email("Invalid email format"),
+  password: z.string()
+      .min(8, { message: "Password must be at least 8 characters long" })
+      .max(32, { message: "Password must not exceed 32 characters" })
+      .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+      .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+      .regex(/[0-9]/, { message: "Password must contain at least one number" }),
+  isReferee: z.boolean(),
 });

@@ -83,11 +83,11 @@ export class Matches {
   @Column({ type: "json", nullable: true })
   game_scores: Record<string, any> | null = null;
 
-  @Column()
-  round: number = 0;
+  @Column({ type: "int", nullable: true })
+  round?: number | null = null;
 
-  @Column({nullable: true})
-  seed_index?: number ;
+  @Column({type: "int", nullable: true})
+  seed_index?: number | null = null;
 
   @Column()
   with_ad: boolean = false;

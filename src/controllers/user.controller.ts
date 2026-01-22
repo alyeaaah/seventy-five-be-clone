@@ -14,8 +14,10 @@ export default class UserController {
         utilLib.loggingRes(req, { data });
         if(data && data.password){
           data.password = "*****";
+          
         }
-        return res.json({data});
+        const resData = {...data, isReferee :true}
+        return res.json({data: resData});
       } else {
         const data = await playerRepo.findOneBy({ uuid: req.data.uuid });
         if (!data) {
@@ -27,6 +29,7 @@ export default class UserController {
           name: data.name,
           username: data.username,
           isBlocked: !!data.deletedAt,
+          isReferee: data.isReferee,
           role: data.role.toLowerCase(),
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
