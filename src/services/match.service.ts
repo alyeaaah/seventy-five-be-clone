@@ -415,7 +415,7 @@ export class MatchService {
       if (statuses && statuses.length > 0) {
         if (statuses.length == 1 && statuses[0] == MatchStatus.ONGOING) {
           queryBuilder
-            .andWhere("matches.winner_team_uuid = ``");
+            .andWhere("matches.winner_team_uuid = ''");
         }
         queryBuilder
           .andWhere("matches.status IN (:...statuses)", { statuses });
