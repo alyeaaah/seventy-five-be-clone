@@ -71,5 +71,24 @@ export default class RedisLib {
     }
     await this.redis.del(key);
   }
+
+  async redisdelPattern(pattern: string) {
+    if (typeof pattern !== "string") {
+      throw new TypeError("Invalid argument type");
+    }
+    if (!this.redis) {
+      throw new Error("Redis connection not available");
+    }
+    try {
+      const keys = await this.redis.keys(pattern);
+      if (keys.length > 0) {
+        await this.redis.del(keys);
+      }
+      return keys.length;
+    } catch (error) {
+      console.error('Redis del pattern error:', error);
+      throw error;
+    }
+  }
 }
 

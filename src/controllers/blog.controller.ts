@@ -56,6 +56,13 @@ export default class BlogContentController {
           newImage.createdBy = req.data?.uuid || undefined;
           await entityManager.save(newImage);
         }
+        // clear all redis with key started with blog-list-home
+        const redisLib = RedisLib.getInstance();
+        try {
+          await redisLib.redisdelPattern("blog-list-home*");
+        } catch (error) {
+          console.error("Failed to clear Redis cache:", error);
+        }
 
         utilLib.loggingRes(req, { data: savedContent, message:"Blog post created successfully" });
         return res.json({ data: savedContent, message:"Blog post created successfully" });
@@ -244,6 +251,14 @@ export default class BlogContentController {
           }
         }
 
+        // clear all redis with key started with blog-list-home
+        const redisLib = RedisLib.getInstance();
+        try {
+          await redisLib.redisdelPattern("blog-list-home*");
+        } catch (error) {
+          console.error("Failed to clear Redis cache:", error);
+        }
+
         utilLib.loggingRes(req, { data: savedContent , message:"Blog post updated successfully"});
           return res.json({ data: savedContent , message:"Blog post updated successfully"});
       });
@@ -333,6 +348,7 @@ export default class BlogContentController {
         utilLib.loggingRes(req, { cachedData });
         return res.json(cachedData);
       }
+      console.log("sssssss1\n\n", cachedData);
 
       const blogRepo = AppDataSource.getRepository(BlogContent);
       const queryBuilder = blogRepo
@@ -353,6 +369,8 @@ export default class BlogContentController {
         .take(limit);
       
       let [data, totalRecords] = await queryBuilder.getManyAndCount();
+      console.log("sssssss\n\n", data);
+      
       if (!data) throw new Error(`Blog content not found`);
       if (data.length < limit) {
         const [newData, newTotalRecords] = await queryBuilder
