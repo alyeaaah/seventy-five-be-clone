@@ -29,6 +29,7 @@ import PlayerBasedController from '../controllers/player-based.controller';
 import GeneralController from '../controllers/general.controller';
 import ChallengerController from '../controllers/challenger.controller';
 import EmailVerificationController from '../controllers/emailVerification.controller';
+import PlayerPublicController from '../controllers/player-public.controller';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -59,6 +60,7 @@ const orderCon = new OrderController();
 const leagueCon = new LeagueController();
 const playerBasedCon = new PlayerBasedController();
 const emailVerificationCon = new EmailVerificationController();
+const playerPublicCon = new PlayerPublicController();
 
 
 export const route = (router: Router) => {
@@ -282,6 +284,7 @@ export const route = (router: Router) => {
   router.get("/api/public/player/standings", logMiddleware, playerCon.publicStandings);
   router.get("/api/public/player/rank-position/:player_uuid", logMiddleware, playerCon.publicRank);
   router.get("/api/public/player/:uuid", logMiddleware, playerCon.publicDetail);
+  router.get("/api/public/player/stats/:uuid", logMiddleware, playerPublicCon.getPlayerStats);
   router.get("/api/public/levels", logMiddleware, levelsCon.list);
   router.get("/api/public/leagues", logMiddleware, leagueCon.list);
   

@@ -9,6 +9,7 @@ import { MerchOrder } from "./MerchOrder";
 import { PlayerLog } from "./PlayerLog";
 import { PlayerReview } from "./PlayerReview";
 import { League } from "./League";
+import { PlayerTitles } from "./PlayerTitles";
 
 export enum GenderEnum {
   male = "m",
@@ -181,5 +182,8 @@ export class Player {
 
   @OneToMany(() => PlayerReview, (playerReview) => playerReview.reviewedBy)
   reviewedBy: PlayerReview[] | undefined;
+
+  @OneToMany(() => PlayerTitles, (playerTitle) => playerTitle.player)
+  playerTitles: PlayerTitles[] | undefined;
   
 }
