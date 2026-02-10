@@ -47,6 +47,7 @@
     "nodemon": "^3.0.2",
     "redis": "^4.6.12",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.3",
     "typedi": "^0.10.0",
     "typeorm": "^0.3.20",
     "undici-types": "^6.6.2",

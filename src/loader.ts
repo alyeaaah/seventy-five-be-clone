@@ -6,8 +6,10 @@ import { createClient } from 'redis';
 import { Container } from 'typedi';
 import { AppDataSource } from "./data-source";
 import { v2 as cloudinary } from 'cloudinary';
+import { createServer } from 'http';
 
 import { route } from './routes/route';
+import webSocketService from './websocket';
 
 export default class Loaders {
   app: any;
@@ -52,6 +54,12 @@ export default class Loaders {
       await this.setupRedis();
       await this.loadCloudinary();
       
+      // Create HTTP server for WebSocket
+      const server = createServer(this.app);
+      
+      // Initialize WebSocket service
+      webSocketService.initialize(server);
+      
       // Compression middleware - harus diletakkan sebelum body parser
       this.app.use(compression());
       
@@ -66,6 +74,13 @@ export default class Loaders {
       }));
       
       route(this.app);
+      
+      // Start server with WebSocket support
+      const PORT = config.port;
+      server.listen(PORT, () => {
+        console.log(`Server with WebSocket is running on port ${PORT}`);
+      });
+      
     } catch (error:any) {
       console.log(error);
     }

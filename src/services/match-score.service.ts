@@ -19,6 +19,7 @@ import { PointLogs, PointSourceEnum, PointStatusEnum } from "../entities/PointLo
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { Titles } from "../entities/Titles";
 import { PlayerTitles } from "../entities/PlayerTitles";
+import webSocketService from "../websocket";
 
 export class MatchScoreService {
   async updateScore(req: any, res: any) {
@@ -254,6 +255,9 @@ export class MatchScoreService {
             }
           }
         };
+        
+        // Trigger WebSocket broadcast by calling getAllOngoingMatchScores
+        await this.getAllOngoingMatchScores();
         
         utilLib.loggingRes(req, responses);
         return res.json(responses);
@@ -750,6 +754,74 @@ export class MatchScoreService {
     } catch (error: any) {
       utilLib.loggingError(req, error.message);
       return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async getAllOngoingMatchScores(): Promise<any[]> {
+    try {
+      const matchesRepo = AppDataSource.getRepository(Matches);
+      const gameRepo = AppDataSource.getRepository(Game);
+      
+      // Fetch all matches with ONGOING status
+      const ongoingMatches = await matchesRepo.find({
+        where: {
+          status: MatchStatus.ONGOING
+        },
+        relations: ["home_team", "away_team"],
+        select: ["uuid", "home_team_uuid", "away_team_uuid", "status", "round"]
+      });
+
+      if (!ongoingMatches.length) {
+        return [];
+      }
+
+      // Fetch game scores for all ongoing matches
+      const matchScores = await Promise.all(
+        ongoingMatches.map(async (match) => {
+          const games = await gameRepo.find({
+            where: {
+              match_uuid: match.uuid
+            },
+            select: ["uuid", "match_uuid", "set", "home_team_score", "away_team_score", "winner_team_uuid"],
+            order: {
+              set: "ASC"
+            }
+          });
+
+          return {
+            matchUuid: match.uuid,
+            homeTeamUuid: match.home_team_uuid,
+            awayTeamUuid: match.away_team_uuid,
+            status: match.status,
+            round: match.round,
+            game_scores: games.map(game => ({
+              set: game.set,
+              game: game.set,
+              game_score_home: game.home_team_score,
+              game_score_away: game.away_team_score,
+              winner_team_uuid: game.winner_team_uuid
+            }))
+          };
+        })
+      );
+
+      // Broadcast to WebSocket clients
+      try {
+        const matchScoreData = matchScores.map(match => ({
+          matchUuid: match.matchUuid,
+          score: match.game_scores
+        }));
+        webSocketService.broadcastMatchScores(matchScoreData);
+        console.log('WebSocket broadcast triggered from getAllOngoingMatchScores');
+      } catch (wsError) {
+        console.error('Failed to broadcast WebSocket update:', wsError);
+        // Don't fail the method if WebSocket broadcast fails
+      }
+
+      return matchScores;
+    } catch (error: any) {
+      console.error('Error fetching ongoing match scores:', error);
+      throw error;
     }
   }
 }

@@ -30,6 +30,7 @@ import GeneralController from '../controllers/general.controller';
 import ChallengerController from '../controllers/challenger.controller';
 import EmailVerificationController from '../controllers/emailVerification.controller';
 import PlayerPublicController from '../controllers/player-public.controller';
+import { WebSocketController } from '../controllers/websocket.controller';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -311,6 +312,12 @@ export const route = (router: Router) => {
   router.get("/api/public/challenger", logMiddleware, challengerCon.listOpenChallengers);
   router.post("/api/challenger/open", logMiddleware, authMiddleware, challengerCon.openChallenge);
   router.post("/api/challenger/accept", logMiddleware, authMiddleware, challengerCon.acceptChallenger);
+
+  // WebSocket endpoints
+  router.post("/api/websocket/broadcast-scores", logMiddleware, authMiddleware, WebSocketController.broadcastMatchScores);
+  router.post("/api/websocket/broadcast-score/:matchUuid", logMiddleware, authMiddleware, WebSocketController.broadcastSingleMatchScore);
+  router.post("/api/websocket/broadcast-ongoing-scores", logMiddleware, authMiddleware, WebSocketController.broadcastOngoingMatchScores);
+  router.get("/api/websocket/status", logMiddleware, authMiddleware, WebSocketController.getWebSocketStatus);
 
 
   router.all('*', function (req, res) {

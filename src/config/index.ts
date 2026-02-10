@@ -31,6 +31,13 @@ export default {
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
     from: process.env.SMTP_FROM ? process.env.SMTP_FROM : "Seventy Five Club <noreply@seventyfive.club>"
+  },
+  websocket: {
+    enabled: process.env.WEBSOCKET_ENABLED !== 'false',
+    path: process.env.WEBSOCKET_PATH || '/ws',
+    heartbeatInterval: Number(process.env.WEBSOCKET_HEARTBEAT_INTERVAL) || 30000,
+    connectionTimeout: Number(process.env.WEBSOCKET_CONNECTION_TIMEOUT) || 120000,
+    secretKey: process.env.SECRET_KEY || 'secret'
   }
 };
   
