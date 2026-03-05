@@ -1,7 +1,7 @@
 import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { PlayerTeam } from "../entities/PlayerTeam";
-import { In, IsNull, Not } from "typeorm";
+import { In, IsNull, MoreThanOrEqual, Not } from "typeorm";
 import { Tournament } from "../entities/Tournament";
 
 export default class PlayerBasedController {
@@ -80,19 +80,13 @@ export default class PlayerBasedController {
       const player_uuid = req.params.uuid || req.data?.uuid;
       const { page = 1, limit = 20 } = req.query;
       const offset = (page - 1) * limit;
-      // First, get the teams the player has joined
-      const playerTeams = await AppDataSource.getRepository(PlayerTeam)
-        .createQueryBuilder("playerTeam")
-        .where("playerTeam.player_uuid = :playerUuid", { playerUuid: player_uuid })
-        .andWhere("playerTeam.deletedBy IS NULL")
-        .getMany();
 
       // Extract the tournament UUIDs from the player teams
-      const tournamentUuids = playerTeams.map(playerTeam => playerTeam.tournament_uuid);
       const tournamentsRepo = AppDataSource.getRepository(Tournament)
       const tournamentsData = await tournamentsRepo.find({
         where: {
-          uuid: Not(In(tournamentUuids)),
+          status: Not(In(["ENDED"])),
+          published_at: Not(IsNull()),
           deletedBy: IsNull()
         },
         relations: {
@@ -111,7 +105,8 @@ export default class PlayerBasedController {
       });
       const totalRecords = await tournamentsRepo.count({
         where: {
-          uuid: In(tournamentUuids),
+          status: In(["PUBLISHED", "POSTPONED", "ONGOING"]),
+          published_at: Not(IsNull()),
           deletedBy: IsNull()
         }
       });
@@ -134,3 +129,4 @@ export default class PlayerBasedController {
     }
   }
 }
+

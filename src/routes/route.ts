@@ -90,6 +90,8 @@ export const route = (router: Router) => {
 
   // Auth
   router.post("/api/auth/login", logMiddleware, authCon.login);
+  router.post("/api/auth/forgot-password", logMiddleware, authCon.forgotPassword);
+  router.post("/api/auth/reset-password", logMiddleware, authCon.resetPassword);
 
   // User 
   router.get("/api/user/get", logMiddleware, authMiddleware, userCon.get);
@@ -117,6 +119,10 @@ export const route = (router: Router) => {
   router.put("/api/tournament/edit/:uuid", logMiddleware, authMiddleware, tourCon.update);
   router.put("/api/tournament/publish/:uuid", logMiddleware, authMiddleware, tourCon.publish);
   router.delete("/api/tournament/delete/:uuid", logMiddleware, authMiddleware, tourCon.delete);
+  
+  // Tournament Participant Management
+  router.post("/api/tournament/:uuid/join", logMiddleware, authMiddleware, tourCon.joinTournament);
+  router.put("/api/tournament/:tournamentUuid/players/:playerUuid/approval", logMiddleware, authMiddleware, tourCon.updateJoinRequestStatus);
   
   // Rule
   router.post("/api/rule/create", logMiddleware, authMiddleware, ruleCon.create);
@@ -248,6 +254,7 @@ export const route = (router: Router) => {
   router.get("/api/public/tournament/groups/:uuid", logMiddleware, matchCon.publicTournamentGroup);
   router.get("/api/player/tournament/joined", logMiddleware, authMiddleware, playerBasedCon.getTournamentsByPlayer);
   router.get("/api/player/tournament/upcoming", logMiddleware, authMiddleware, playerBasedCon.getUpcomingTournamentByPlayer);
+  router.get("/api/player/tournament/:uuid", logMiddleware, authMiddleware, tourCon.publicDetail);
   router.get("/api/public/kudos", logMiddleware, authMiddleware, kudosCon.playerKudosList);
   router.post("/api/match/kudos", logMiddleware, authMiddleware, kudosCon.givePlayerKudos);
   // Public API

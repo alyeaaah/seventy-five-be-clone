@@ -260,7 +260,7 @@ export default class TeamController {
         .andWhere("playerTeam.deletedAt IS NULL")
         .andWhere("player.deletedAt IS NULL")
         .andWhere("player.name IS NOT NULL")
-        .orderBy("team.name", "ASC");      
+        .orderBy("team.name", "ASC");
       const data = await queryBuilder.getRawMany();
       
       utilLib.loggingRes(req, {

@@ -133,6 +133,12 @@ export class Player {
   @Column({ type: "timestamp", nullable: true })
   deletedAt: Date | null = null;
 
+  @Column({ nullable: true })
+  resetToken?: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  resetTokenExpiry?: Date;
+
   @Column({ type: "int", nullable: true })
   league_id: number | undefined;
 

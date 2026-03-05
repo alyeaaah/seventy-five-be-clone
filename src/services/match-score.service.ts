@@ -162,7 +162,6 @@ export class MatchScoreService {
               await entityManager.save(player);
             }
           }
-          // END: set player point
         }
         if ((status == MatchHistoryType.INJURY || status == MatchHistoryType.NO_SHOW || status == MatchHistoryType.OTHERS) && player_uuid) {
           const teamUuid = match?.away_team?.players?.find((player) => player.player_uuid === player_uuid)?.team_uuid || match?.home_team?.players?.find((player) => player.player_uuid === player_uuid)?.team_uuid || undefined;
@@ -241,7 +240,11 @@ export class MatchScoreService {
           ]); 
         }
 
-
+        if (match.status == MatchStatus.ENDED && status !== "RESET" && (match.round || -1) > -1) { 
+          // BEGIN: update next round
+          await this.updateNextRound(req, res, true);
+          // END: update next round
+        }
         const responses = {
           message: "Match updated successfully!",
           data: { ...match,
@@ -255,19 +258,18 @@ export class MatchScoreService {
             }
           }
         };
-        
-        // Trigger WebSocket broadcast by calling getAllOngoingMatchScores
-        await this.getAllOngoingMatchScores();
-        
         utilLib.loggingRes(req, responses);
         return res.json(responses);
+      }).then(async () => {
+        // Trigger WebSocket broadcast by calling getAllOngoingMatchScores
+        await this.getAllOngoingMatchScores();
       });
     } catch (error: any) {
       utilLib.loggingError(req, error.message);
       return res.status(400).json({ message: error.message });
     }
   }
-  async updateNextRound(req: any, res: any) {
+  async updateNextRound(req: any, res: any, isVoid?: boolean) {
     const utilLib = Util.getInstance();
 
     const { uuid: matchUUID } = req.params;
@@ -303,7 +305,7 @@ export class MatchScoreService {
             }
           });
 
-          if (tournament?.type === typeTournamentEnum.KNOCKOUT) {
+          if (tournament?.type === typeTournamentEnum.KNOCKOUT && (match.round || -1) > -1) {
             // BEGIN: update next round
             // check if this match is a knockout tournament match
             const nextSeed = utilLib.getNextSeed({
@@ -472,6 +474,7 @@ export class MatchScoreService {
           }
             // END: update next match
         }
+        if (isVoid === true) return;
         utilLib.loggingRes(req, { match, message: "Match updated successfully!" });
         return res.json({ match, message: "Match updated successfully!" });
       }).catch((error) => {
@@ -768,7 +771,7 @@ export class MatchScoreService {
           status: MatchStatus.ONGOING
         },
         relations: ["home_team", "away_team"],
-        select: ["uuid", "home_team_uuid", "away_team_uuid", "status", "round"]
+        select: ["uuid", "home_team_uuid", "away_team_uuid", "status", "game_scores", "round"]
       });
 
       if (!ongoingMatches.length) {
@@ -778,15 +781,6 @@ export class MatchScoreService {
       // Fetch game scores for all ongoing matches
       const matchScores = await Promise.all(
         ongoingMatches.map(async (match) => {
-          const games = await gameRepo.find({
-            where: {
-              match_uuid: match.uuid
-            },
-            select: ["uuid", "match_uuid", "set", "home_team_score", "away_team_score", "winner_team_uuid"],
-            order: {
-              set: "ASC"
-            }
-          });
 
           return {
             matchUuid: match.uuid,
@@ -794,13 +788,7 @@ export class MatchScoreService {
             awayTeamUuid: match.away_team_uuid,
             status: match.status,
             round: match.round,
-            game_scores: games.map(game => ({
-              set: game.set,
-              game: game.set,
-              game_score_home: game.home_team_score,
-              game_score_away: game.away_team_score,
-              winner_team_uuid: game.winner_team_uuid
-            }))
+            game_scores: match.game_scores
           };
         })
       );
@@ -809,7 +797,14 @@ export class MatchScoreService {
       try {
         const matchScoreData = matchScores.map(match => ({
           matchUuid: match.matchUuid,
-          score: match.game_scores
+          score: match.game_scores?.map((game: any) => ({
+            set: game.set,
+            game: game.game,
+            game_score_home: game.game_score_home,
+            game_score_away: game.game_score_away,
+            status: game.status,
+            last_updated_at: game.last_updated_at
+          }))
         }));
         webSocketService.broadcastMatchScores(matchScoreData);
         console.log('WebSocket broadcast triggered from getAllOngoingMatchScores');

@@ -515,7 +515,7 @@ export default class TournamentController {
   }
 
   // Player joins tournament
-  joinTournament = async (req: any, res: any) => {
+  async joinTournament(req: any, res: any) {
     const utilLib = Util.getInstance();
     const { uuid: tournamentUuid } = req.params;
     const playerUuid = req.data?.uuid || req.user?.uuid;
@@ -536,7 +536,7 @@ export default class TournamentController {
   }
 
   // Admin updates join request status (approve/reject)
-  updateJoinRequestStatus = async (req: any, res: any) => {
+  async updateJoinRequestStatus(req: any, res: any) {
     const utilLib = Util.getInstance();
     const { tournamentUuid, playerUuid } = req.params;
     const { status } = req.body;

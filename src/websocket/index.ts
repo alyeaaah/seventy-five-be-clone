@@ -14,6 +14,8 @@ interface MatchScoreData {
     game: number;
     game_score_home: string | number;
     game_score_away: string | number;
+    status?: string;
+    last_updated_at?: string;
   }[];
 }
 

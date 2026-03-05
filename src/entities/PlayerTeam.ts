@@ -10,6 +10,12 @@ import { Tournament } from "./Tournament";
 import { Player } from "./Player";
 import { Team } from "./Team";
   
+export enum PTStatusEnum {
+  REQUESTED = "REQUESTED",
+  APPROVED = "APPROVED",
+  CONFIRMED = "CONFIRMED",
+  REJECTED = "REJECTED"
+};
   @Entity("player_team")
   export class PlayerTeam {
     @PrimaryGeneratedColumn()
@@ -30,6 +36,9 @@ import { Team } from "./Team";
 
     @Column()
     tournament_uuid: string | undefined = "";
+
+    @Column({ type: "enum", enum: PTStatusEnum, default: PTStatusEnum.REQUESTED })
+    status: PTStatusEnum = PTStatusEnum.REQUESTED;
 
     @Column({ type: "varchar", nullable: true })
     createdBy: string | undefined;
