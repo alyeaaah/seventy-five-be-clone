@@ -30,6 +30,7 @@ import GeneralController from '../controllers/general.controller';
 import ChallengerController from '../controllers/challenger.controller';
 import EmailVerificationController from '../controllers/emailVerification.controller';
 import PlayerPublicController from '../controllers/player-public.controller';
+import { WebSocketController } from '../controllers/websocket.controller';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -89,6 +90,8 @@ export const route = (router: Router) => {
 
   // Auth
   router.post("/api/auth/login", logMiddleware, authCon.login);
+  router.post("/api/auth/forgot-password", logMiddleware, authCon.forgotPassword);
+  router.post("/api/auth/reset-password", logMiddleware, authCon.resetPassword);
 
   // User 
   router.get("/api/user/get", logMiddleware, authMiddleware, userCon.get);
@@ -116,6 +119,10 @@ export const route = (router: Router) => {
   router.put("/api/tournament/edit/:uuid", logMiddleware, authMiddleware, tourCon.update);
   router.put("/api/tournament/publish/:uuid", logMiddleware, authMiddleware, tourCon.publish);
   router.delete("/api/tournament/delete/:uuid", logMiddleware, authMiddleware, tourCon.delete);
+  
+  // Tournament Participant Management
+  router.post("/api/tournament/:uuid/join", logMiddleware, authMiddleware, tourCon.joinTournament);
+  router.put("/api/tournament/:tournamentUuid/players/:playerUuid/approval", logMiddleware, authMiddleware, tourCon.updateJoinRequestStatus);
   
   // Rule
   router.post("/api/rule/create", logMiddleware, authMiddleware, ruleCon.create);
@@ -247,6 +254,7 @@ export const route = (router: Router) => {
   router.get("/api/public/tournament/groups/:uuid", logMiddleware, matchCon.publicTournamentGroup);
   router.get("/api/player/tournament/joined", logMiddleware, authMiddleware, playerBasedCon.getTournamentsByPlayer);
   router.get("/api/player/tournament/upcoming", logMiddleware, authMiddleware, playerBasedCon.getUpcomingTournamentByPlayer);
+  router.get("/api/player/tournament/:uuid", logMiddleware, authMiddleware, tourCon.publicDetail);
   router.get("/api/public/kudos", logMiddleware, authMiddleware, kudosCon.playerKudosList);
   router.post("/api/match/kudos", logMiddleware, authMiddleware, kudosCon.givePlayerKudos);
   // Public API
@@ -311,6 +319,12 @@ export const route = (router: Router) => {
   router.get("/api/public/challenger", logMiddleware, challengerCon.listOpenChallengers);
   router.post("/api/challenger/open", logMiddleware, authMiddleware, challengerCon.openChallenge);
   router.post("/api/challenger/accept", logMiddleware, authMiddleware, challengerCon.acceptChallenger);
+
+  // WebSocket endpoints
+  router.post("/api/websocket/broadcast-scores", logMiddleware, authMiddleware, WebSocketController.broadcastMatchScores);
+  router.post("/api/websocket/broadcast-score/:matchUuid", logMiddleware, authMiddleware, WebSocketController.broadcastSingleMatchScore);
+  router.post("/api/websocket/broadcast-ongoing-scores", logMiddleware, authMiddleware, WebSocketController.broadcastOngoingMatchScores);
+  router.get("/api/websocket/status", logMiddleware, authMiddleware, WebSocketController.getWebSocketStatus);
 
 
   router.all('*', function (req, res) {

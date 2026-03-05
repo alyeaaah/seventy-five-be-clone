@@ -50,21 +50,26 @@ export class Matches {
   @Column()
   winner_team_uuid: string = "";
 
+  // only in group stage, and null if in knockout stage
   @Column({nullable: true})
   tournament_group_index?: number;
 
   @Column({ nullable: true })
   group_uuid: string | null = null;
 
+  // index of prev group stage if in knockout stage
   @Column({nullable: true})
   home_group_index?: number;
 
+  // position of team in prev group stage if in knockout if in knockout
   @Column({nullable: true})
   home_group_position?: number;
 
+  // index of prev group stage
   @Column({nullable: true})
   away_group_index?: number;
 
+  // position of team in prev group stage
   @Column({nullable: true})
   away_group_position?: number;
 
@@ -83,9 +88,11 @@ export class Matches {
   @Column({ type: "json", nullable: true })
   game_scores: Record<string, any> | null = null;
 
+  // null if in group stage
   @Column({ type: "int", nullable: true })
   round?: number | null = null;
 
+  // null if in group stage
   @Column({type: "int", nullable: true})
   seed_index?: number | null = null;
 
@@ -106,6 +113,16 @@ export class Matches {
 
   @Column()
   status: MatchStatus = MatchStatus.UPCOMING;
+
+  @Column({ 
+    type: "int", 
+    default: 6,
+    comment: "Number of games/sets needed to win the match"
+  })
+  race_to: number = 6;
+
+  @Column()
+  draft_pick: boolean = false;
 
   @Column({ type: "varchar", nullable: true })
   createdBy: string | undefined;

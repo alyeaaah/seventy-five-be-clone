@@ -58,8 +58,14 @@ export class Tournament {
   @Column({ type: "enum", enum: statusTournamentEnum, nullable: true })  
   status: statusTournamentEnum = statusTournamentEnum.DRAFT;
 
+  @Column({ type: "boolean", default: false })
+  show_bracket: boolean = false;
+
   @Column({ type: "enum", enum: typeTournamentEnum, nullable: true })  
   type: typeTournamentEnum = typeTournamentEnum.KNOCKOUT; 
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0.00 })
+  commitment_fee: number = 0.00;
 
   @Column({ type: "datetime", nullable: true })
   start_date: Date | null = null;
@@ -72,6 +78,9 @@ export class Tournament {
 
   @Column({ type: "boolean", nullable: true })
   strict_level: boolean | undefined;
+
+  @Column({ type: "boolean", default: false })
+  draft_pick: boolean = false;
 
   @Column({ type: "varchar", nullable: true })
   level_uuid: string | undefined;
