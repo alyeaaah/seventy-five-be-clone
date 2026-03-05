@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/app.ts",
     "dev": "npx nodemon src/app.ts",
-    "build": "npx tsc && cp package.json dist/ && cp .env dist/",
+    "build": "npx tsc && cp package.json dist/ && cp .env dist/ && cd dist && npm install --production",
     "typeorm": "ts-node -r dotenv/config ./node_modules/typeorm/cli -d ./src/data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate ./src/database/migrations/migration",
     "migrate": "npm run typeorm -- migration:run",
