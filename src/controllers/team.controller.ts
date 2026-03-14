@@ -5,7 +5,7 @@ import { IsNull, Not } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
 import { Player } from "../entities/Player";
-import { PlayerTeam } from "../entities/PlayerTeam";
+import { PlayerTeam, PTStatusEnum } from "../entities/PlayerTeam";
 import { Team } from "../entities/Team";
 
 export default class TeamController {
@@ -258,6 +258,7 @@ export default class TeamController {
         .leftJoin("playerTeam.team", "team")
         .where("playerTeam.tournament_uuid = :tournament_uuid", { tournament_uuid: uuid })
         .andWhere("playerTeam.deletedAt IS NULL")
+        .andWhere("playerTeam.status = :status", { status: PTStatusEnum.CONFIRMED })
         .andWhere("player.deletedAt IS NULL")
         .andWhere("player.name IS NOT NULL")
         .orderBy("team.name", "ASC");

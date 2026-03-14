@@ -101,6 +101,7 @@ export const route = (router: Router) => {
   router.post("/api/player/create", logMiddleware, authMiddleware, playerCon.create);
   router.post("/api/player/quick-add", logMiddleware, authMiddleware, playerCon.quickCreate);
   router.get("/api/player/list", logMiddleware, authMiddleware, playerCon.list);
+  router.get("/api/player/dropdown", logMiddleware, authMiddleware, playerBasedCon.listDropdown);
   router.get("/api/player/address", logMiddleware, authMiddleware, addressCon.detail);
   router.put("/api/player/address", logMiddleware, authMiddleware, addressCon.update);
   router.get("/api/player/ranking", logMiddleware, playerCon.rank);

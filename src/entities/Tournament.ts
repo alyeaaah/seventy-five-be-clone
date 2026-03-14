@@ -97,6 +97,9 @@ export class Tournament {
   @Column({ type: "int", nullable: true })
   total_group: number | undefined;
 
+  @Column({ type: "int", nullable: true })
+  max_player: number | undefined;
+
   @Column({ type: "timestamp", nullable: true })
   published_at: Date | null | undefined;
 

@@ -15,7 +15,7 @@ export default class TournamentController {
 
   async create(req: any, res: any) {
     const utilLib = Util.getInstance();
-    const { name, description, start_date, end_date, league_id, media_url, type, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, rules, total_group } = req.body;
+    const { name, description, start_date, end_date, league_id, media_url, type, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, rules, total_group, max_player } = req.body;
     try {
       if (!name || !description) {
         throw new Error("All fields are required!");
@@ -44,6 +44,7 @@ export default class TournamentController {
         newData.commitment_fee = commitment_fee || 0.00;
         newData.league_id = league_id;
         newData.total_group = total_group;
+        newData.max_player = max_player;
         newData.createdBy = req.data?.uuid || undefined;
         const data = await transactionalEntityManager.save(newData);
         
@@ -115,10 +116,12 @@ export default class TournamentController {
       
       const result = data.map((d) => ({
         ...d,
+        commitment_fee: parseFloat(String(d.commitment_fee)),
         court: d.court?.name,
         level: d.level?.name,
         player_count: playerCount.find(pc => pc.tournament_uuid === d.uuid)?.counter || 0,
         match_count: matchCount.find(pc => pc.tournament_uuid === d.uuid)?.counter || 0,
+        max_player: d.max_player,
       }));
 
       const totalPages = Math.ceil(totalRecords / limit);
@@ -170,6 +173,7 @@ export default class TournamentController {
         player_count: playerCount,
         match_count: matchCount,
         commitment_fee: Number(data.commitment_fee) || 0,
+        max_player: data.max_player,
       }
       utilLib.loggingRes(req, { data: result });
       return res.json({ data: result });
@@ -181,7 +185,7 @@ export default class TournamentController {
   async update(req: any, res: any) {
     const utilLib = Util.getInstance();
     const { uuid } = req.params;
-    const { name, description, start_date, end_date, status, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, league_id, media_url, point_config_uuid, rules, total_group } = req.body;
+    const { name, description, start_date, end_date, status, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, league_id, media_url, point_config_uuid, rules, total_group, max_player } = req.body;
     
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
@@ -208,6 +212,7 @@ export default class TournamentController {
         data.commitment_fee = commitment_fee === undefined || commitment_fee === null ? data.commitment_fee : commitment_fee;
         data.league_id = league_id || data.league_id;
         data.total_group = total_group || data.total_group;
+        data.max_player = max_player || data.max_player;
       
         data = await transactionalEntityManager.save(data);
         if (rules && rules.length > 0 && uuid) {
@@ -446,6 +451,7 @@ export default class TournamentController {
         rules: data.rules,
         join_status: playerJoinStatus,
         commitment_fee: Number(data.commitment_fee) || 0,
+        max_player: data.max_player,
       }
       utilLib.loggingRes(req, { data: result });
       return res.json({ data: result });
@@ -525,7 +531,10 @@ export default class TournamentController {
         throw new Error("Player authentication required");
       }
 
-      const result = await this.tournamentService.requestJoinTournament(playerUuid, tournamentUuid);
+      const result = await this.tournamentService.requestJoinTournament(playerUuid, tournamentUuid, req?.body?.player_uuid);
+      if (result.error) {
+        return res.status(result.error).json({ message: result.message });
+      }
       
       utilLib.loggingRes(req, result);
       return res.json(result);
