@@ -100,10 +100,25 @@ export const updateGroupPayloadSchema = z.object({
     teams: z.array(z.object({
       uuid: z.string().nullish(),
       name: z.string(),
+      position: z.number().optional(), // Add position field
     })),
   })),
   matches: z.array(matchPayloadSchema),
 });
+
+export const updateTeamGroupOnlyPayloadSchema = z.object({
+  groups: z.array(z.object({
+    uuid: z.string().nullish(),
+    groupKey: z.number(),
+    name: z.string(),
+    teams: z.array(z.object({
+      uuid: z.string().nullish(),
+      name: z.string(),
+      alias: z.string().nullish(),
+    })),
+  })),
+});
 export type GroupResponseData = z.infer<typeof groupResponseSchema>;
 export type UpdateGroupPayloadData = z.infer<typeof updateGroupPayloadSchema>;
+export type UpdateTeamGroupOnlyPayloadData = z.infer<typeof updateTeamGroupOnlyPayloadSchema>;
 export type MatchData = z.infer<typeof matchSchema>;

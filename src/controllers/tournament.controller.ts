@@ -4,18 +4,21 @@ import { AppDataSource } from "../data-source";
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
 import { In, IsNull, Like, MoreThan, Not } from "typeorm";
-import { PlayerTeam } from "../entities/PlayerTeam";
+import { PlayerTeam, PTStatusEnum } from "../entities/PlayerTeam";
 import { Matches } from "../entities/Matches";
 import { TournamentSponsors } from "../entities/TournamentSponsors";
 import { TournamentGroup } from "../entities/TournamentGroups";
 import { TournamentService } from "../services/tournament.service";
 
 export default class TournamentController {
+  constructor() {
+    this.update = this.update.bind(this);
+  }
   private tournamentService = new TournamentService();
 
   async create(req: any, res: any) {
     const utilLib = Util.getInstance();
-    const { name, description, start_date, end_date, league_id, media_url, type, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, rules, total_group } = req.body;
+    const { name, description, start_date, end_date, league_id, media_url, type, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, rules, total_group, group_qualifier, max_player } = req.body;
     try {
       if (!name || !description) {
         throw new Error("All fields are required!");
@@ -44,6 +47,8 @@ export default class TournamentController {
         newData.commitment_fee = commitment_fee || 0.00;
         newData.league_id = league_id;
         newData.total_group = total_group;
+        newData.group_qualifier = group_qualifier || 1;
+        newData.max_player = max_player;
         newData.createdBy = req.data?.uuid || undefined;
         const data = await transactionalEntityManager.save(newData);
         
@@ -115,10 +120,12 @@ export default class TournamentController {
       
       const result = data.map((d) => ({
         ...d,
+        commitment_fee: parseFloat(String(d.commitment_fee)),
         court: d.court?.name,
         level: d.level?.name,
         player_count: playerCount.find(pc => pc.tournament_uuid === d.uuid)?.counter || 0,
         match_count: matchCount.find(pc => pc.tournament_uuid === d.uuid)?.counter || 0,
+        max_player: d.max_player,
       }));
 
       const totalPages = Math.ceil(totalRecords / limit);
@@ -170,6 +177,7 @@ export default class TournamentController {
         player_count: playerCount,
         match_count: matchCount,
         commitment_fee: Number(data.commitment_fee) || 0,
+        max_player: data.max_player,
       }
       utilLib.loggingRes(req, { data: result });
       return res.json({ data: result });
@@ -180,9 +188,10 @@ export default class TournamentController {
   }
   async update(req: any, res: any) {
     const utilLib = Util.getInstance();
+    const tournamentService = new TournamentService();
     const { uuid } = req.params;
-    const { name, description, start_date, end_date, status, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, league_id, media_url, point_config_uuid, rules, total_group } = req.body;
-    
+    const { name, description, start_date, end_date, status, court_uuid, level_uuid, strict_level, draft_pick, show_bracket, commitment_fee, league_id, media_url, point_config_uuid, rules, total_group, group_qualifier, max_player } = req.body;
+    const adminUuid = req.data?.uuid;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
       if (name) {
@@ -193,6 +202,17 @@ export default class TournamentController {
 
         let data = await tRepo.findOneBy({ uuid });
         if (!data) throw new Error(`Data not found`);
+        
+        // Check if total_group has changed
+        const totalGroupChanged = total_group !== undefined && total_group !== data.total_group;
+        const groupQualifierChanged = group_qualifier !== undefined && group_qualifier !== data.group_qualifier;
+        const maxPlayerChanged = max_player !== undefined && max_player !== data.max_player;
+        
+        // Prevent changing total_group, group_qualifier, and max_player when show_bracket is true
+        if (data.show_bracket && (totalGroupChanged || groupQualifierChanged || maxPlayerChanged)) {
+          throw new Error("Cannot change total_group, group_qualifier, or max_player when show_bracket is enabled");
+        }
+        
         data.name = name || data.name;
         data.description = description || data.description;
         data.start_date = start_date || data.start_date;
@@ -208,8 +228,16 @@ export default class TournamentController {
         data.commitment_fee = commitment_fee === undefined || commitment_fee === null ? data.commitment_fee : commitment_fee;
         data.league_id = league_id || data.league_id;
         data.total_group = total_group || data.total_group;
+        data.group_qualifier = group_qualifier !== undefined ? group_qualifier : data.group_qualifier;
+        data.max_player = max_player || data.max_player;
       
         data = await transactionalEntityManager.save(data);
+        
+        // If total_group changed, reset groups and team assignments
+        if (totalGroupChanged) {
+          await this.tournamentService.resetTournamentGroups(adminUuid, uuid, transactionalEntityManager);
+        }
+        
         if (rules && rules.length > 0 && uuid) {
           const ruleRepo = AppDataSource.getRepository(Rule);
           for (const rule of rules) {
@@ -446,6 +474,7 @@ export default class TournamentController {
         rules: data.rules,
         join_status: playerJoinStatus,
         commitment_fee: Number(data.commitment_fee) || 0,
+        max_player: data.max_player,
       }
       utilLib.loggingRes(req, { data: result });
       return res.json({ data: result });
@@ -525,7 +554,10 @@ export default class TournamentController {
         throw new Error("Player authentication required");
       }
 
-      const result = await this.tournamentService.requestJoinTournament(playerUuid, tournamentUuid);
+      const result = await this.tournamentService.requestJoinTournament(playerUuid, tournamentUuid, req?.body?.player_uuid);
+      if (result.error) {
+        return res.status(result.error).json({ message: result.message });
+      }
       
       utilLib.loggingRes(req, result);
       return res.json(result);
@@ -554,6 +586,78 @@ export default class TournamentController {
       const result = await this.tournamentService.updateJoinRequestStatus(playerUuid, tournamentUuid, adminUuid, status);
       
       utilLib.loggingRes(req, result);
+      return res.json(result);
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  // Get team participants with status filtering
+  getTeamParticipants = async (req: any, res: any) => {
+    const utilLib = Util.getInstance();
+    const { tournamentUuid } = req.params;
+    const { status, page = 1, limit = 200 } = req.query;
+    const adminUuid = req.data?.uuid || req.user?.uuid;
+
+    try {
+      if (!tournamentUuid) {
+        throw new Error("Tournament UUID is required");
+      }
+
+      const parsedStatuses:PTStatusEnum[] = status?.split(",")?.map((s: string) => s.toUpperCase() as PTStatusEnum) || [];
+      const result = await this.tournamentService.getTeamParticipants(tournamentUuid, parsedStatuses, Number(page), Number(limit));
+       
+      utilLib.loggingRes(req, result);
+      return res.json(result);
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  // Update team join request status
+  updateTeamJoinRequestStatus = async (req: any, res: any) => {
+    const utilLib = Util.getInstance();
+    const { tournamentUuid } = req.params;
+    const { teamUuid, status } = req.body;
+    const adminUuid = req.data?.uuid || req.user?.uuid;
+
+    try {
+      if (!adminUuid) {
+        throw new Error("Admin authentication required");
+      }
+
+      const parsedStatus: PTStatusEnum | undefined = status?.toUpperCase() as PTStatusEnum;
+      if (!parsedStatus) {
+        throw new Error("Invalid status. Must be 'approved' or 'rejected' or 'confirmed'");
+      }
+
+      if (!teamUuid) {
+        throw new Error("Team UUID is required");
+      }
+
+      const result = await this.tournamentService.updateTeamJoinRequestStatus(teamUuid, tournamentUuid, adminUuid, parsedStatus);
+      
+      utilLib.loggingRes(req, result);
+      return res.json(result);
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  addTeam = async (req: any, res: any) => {
+    const utilLib = Util.getInstance();
+    const { player_uuids, status } = req.body;
+    const { uuid: tournament_uuid } = req.params;
+    
+    try {
+      if (!player_uuids || !tournament_uuid) {
+        throw new Error("player_uuids and tournament_uuid are required");
+      }
+
+      const result = await this.tournamentService.addTeam(player_uuids, tournament_uuid, status);
       return res.json(result);
     } catch (error: any) {
       utilLib.loggingError(req, error.message);

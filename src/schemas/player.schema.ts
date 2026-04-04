@@ -89,3 +89,17 @@ export const updateAccessPayloadSchema = z.object({
       .regex(/[0-9]/, { message: "Password must contain at least one number" }),
   isReferee: z.boolean(),
 });
+
+export const draftPickStatusEnum = z.enum(["AVAILABLE", "PICKING", "PICKED"]);
+
+export const updateDraftPickPositionSchema = z.object({
+  players: z.array(
+    z.object({
+      id: z.number(),
+      player_uuid: z.string(),
+      position: z.number().min(1),
+      status: draftPickStatusEnum,
+      seeded: z.boolean().default(false),
+    })
+  )
+});

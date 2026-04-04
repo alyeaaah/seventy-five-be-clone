@@ -12,11 +12,14 @@ export const updateMatchPayloadSchema = z.object({
   time: z.string().nullish(), // Will be converted to Date in the service
   round: z.number().nullish(),
   group: z.number().nullish(), // maps to tournament_group_index
+  group_uuid: z.string().nullish(), // maps to tournament_group_index
   seed_index: z.number().nullish(),
   home_group_index: z.number().nullish(),
   home_group_position: z.number().nullish(),
+  home_group_uuid: z.string().nullish(),
   away_group_index: z.number().nullish(),
   away_group_position: z.number().nullish(),
+  away_group_uuid: z.string().nullish(),
 });
 
 export const updateMultipleMatchesPayloadSchema = z.object({
