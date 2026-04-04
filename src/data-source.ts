@@ -49,6 +49,7 @@ import { Challenger } from "./entities/Challenger";
 import { EmailVerification } from "./entities/EmailVerification";
 import { Titles } from "./entities/Titles";
 import { PlayerTitles } from "./entities/PlayerTitles";
+import { DraftPick } from "./entities/DraftPick";
 
 const dataSourceOpt: DataSourceOptions = {
   type: "mysql",
@@ -116,6 +117,7 @@ const dataSourceOpt: DataSourceOptions = {
     EmailVerification,
     Titles,
     PlayerTitles,
+    DraftPick,
   ],
   migrationsRun: true,
   migrationsTableName: "migrations",

@@ -65,6 +65,10 @@ export class Matches {
   @Column({nullable: true})
   home_group_position?: number;
 
+  // UUID of prev group stage for home team if in knockout
+  @Column({nullable: true})
+  home_group_uuid?: string;
+
   // index of prev group stage
   @Column({nullable: true})
   away_group_index?: number;
@@ -72,6 +76,10 @@ export class Matches {
   // position of team in prev group stage
   @Column({nullable: true})
   away_group_position?: number;
+
+  // UUID of prev group stage for away team if in knockout
+  @Column({nullable: true})
+  away_group_uuid?: string;
 
   @Column()
   court_field_uuid: string | null = null;

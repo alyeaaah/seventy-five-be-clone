@@ -40,6 +40,9 @@ import { TournamentGroup } from "./TournamentGroups";
     group_uuid: string | null = null;
 
     @Column({ type: "int", nullable: true, default: 0 })
+    position: number = 0;
+
+    @Column({ type: "int", nullable: true, default: 0 })
     matches_won: number = 0;
 
     @Column({ type: "int", nullable: true, default: 0 })
@@ -88,6 +91,5 @@ import { TournamentGroup } from "./TournamentGroups";
 
     @OneToMany(() => MatchHistories, (matchHistories) => matchHistories.team)
     matchHistories: MatchHistories[] | undefined;
-
   }
   

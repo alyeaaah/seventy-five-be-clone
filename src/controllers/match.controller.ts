@@ -29,6 +29,7 @@ export default class MatchController {
     this.updateMatch = this.updateMatch.bind(this);
     this.updateTournamentGroup = this.updateTournamentGroup.bind(this);
     this.updateMultipleMatches = this.updateMultipleMatches.bind(this);
+    this.updateTeamGroupOnly = this.updateTeamGroupOnly.bind(this);
     this.updateSetScore = this.updateSetScore.bind(this);
     this.endSet = this.endSet.bind(this);
     this.delete = this.delete.bind(this);
@@ -49,7 +50,16 @@ export default class MatchController {
     return this.matchAdministratorService.updateMultiple(req, res);
   }
   async updateMultipleMatches(req: any, res: any) {
-    return this.matchAdministratorService.updateMultipleMatches(req, res);
+    const { mode } = req.query;
+    switch (mode) {
+      case "group":
+        return this.matchAdministratorService.updateMultipleGroupMatches(req, res);
+      case "knockout":
+        return this.matchAdministratorService.updateMultipleKnockoutMatches(req, res);
+      default:
+        return this.matchAdministratorService.updateMultipleMatches(req, res);
+
+    }
   }
   async createMultipleCustom(req: any, res: any) {
     return this.matchAdministratorService.createMultipleCustom(req, res);
@@ -84,6 +94,9 @@ export default class MatchController {
   }
   async updateTournamentGroup(req: any, res: any) {
     return this.matchAdministratorService.updatePlayerTeamGroup(req, res);
+  }
+  async updateTeamGroupOnly(req: any, res: any) {
+    return this.matchAdministratorService.updateTeamGroupOnly(req, res);
   }
   async updateSetScore(req: any, res: any) {
     return this.matchScoreService.updateSetScore(req, res);

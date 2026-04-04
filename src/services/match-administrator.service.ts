@@ -1,6 +1,6 @@
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
-import { EntityManager, IsNull } from "typeorm";
+import { EntityManager, In, IsNull, MoreThanOrEqual } from "typeorm";
 
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
@@ -9,7 +9,7 @@ import { Matches, MatchStatus } from "../entities/Matches";
 import RedisLib from "../lib/redis.lib";
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { TournamentGroup } from "../entities/TournamentGroups";
-import { updateGroupPayloadSchema, UpdateGroupPayloadData } from "../schemas/tournament.schema";
+import { UpdateGroupPayloadData, updateGroupPayloadSchema, updateTeamGroupOnlyPayloadSchema } from "../schemas/tournament.schema";
 import { updateMatchPayloadSchema, updateMultipleMatchesPayloadSchema, UpdateMatchPayload } from "../schemas/match.schema";
 
 export class MatchAdministratorService {
@@ -77,7 +77,7 @@ export class MatchAdministratorService {
       if (!dataExists) {
         throw new Error("Tournament not found!");
       }
-      await AppDataSource.transaction(async (entityManager) => {
+      await AppDataSource.transaction(async (em) => {
         // check tournament_uuid exists in redis
         const exist = await redisLib.redisget(`tournament-${tournament_uuid}`);
         if (exist) {
@@ -127,7 +127,7 @@ export class MatchAdministratorService {
           return newMatch;
         });
 
-        const data = await entityManager.save(newData);
+        const data = await em.save(newData);
         if (data.length > 0) {
           redisLib.redisset(`tournament-${tournament_uuid}`, true);
         }
@@ -167,9 +167,9 @@ export class MatchAdministratorService {
         messages: "Sucess"
       }
       // transactional appdatasource create transaction
-      await AppDataSource.transaction(async (entityManager) => {
+      await AppDataSource.transaction(async (em) => {
         // Get all existing matches for this tournament
-        const existingMatches = await entityManager.find(Matches, {
+        const existingMatches = await em.find(Matches, {
           where: {
             tournament_uuid: tournament_uuid,
             deletedBy: IsNull(),
@@ -185,7 +185,7 @@ export class MatchAdministratorService {
           if (!payloadUuids.has(existingMatch.uuid)) {
             existingMatch.deletedBy = req.data?.uuid || undefined;
             existingMatch.deletedAt = new Date();
-            await entityManager.save(existingMatch);
+            await em.save(existingMatch);
             deletedCount++;
           }
         }
@@ -215,12 +215,12 @@ export class MatchAdministratorService {
             newMatch.away_group_index = m.away_group_index;
             newMatch.away_group_position = m.away_group_position;
             newMatch.createdBy = req.data?.uuid || undefined;
-            await entityManager.save(newMatch);
+            await em.save(newMatch);
             result.data.push(newMatch);
             result.updatedRecords++;
           } else {
-            // Use entityManager for consistency within transaction
-            const dataExists = await entityManager.findOne(Matches, {
+            // Use em for consistency within transaction
+            const dataExists = await em.findOne(Matches, {
               where: {
                 uuid: m.uuid,
                 deletedBy: IsNull(),
@@ -240,7 +240,7 @@ export class MatchAdministratorService {
               dataExists.away_group_index = m.away_group_index;
               dataExists.away_group_position = m.away_group_position;
               dataExists.seed_index = m.seed_index || null;
-              await entityManager.save(dataExists);
+              await em.save(dataExists);
               result.data.push(dataExists);
               result.updatedRecords++;
             } else {
@@ -262,7 +262,7 @@ export class MatchAdministratorService {
               newMatch.away_group_position = m.away_group_position;
               newMatch.seed_index = m.seed_index || null;
               newMatch.createdBy = req.data?.uuid || undefined;
-              await entityManager.save(newMatch);
+              await em.save(newMatch);
               result.data.push(newMatch);
               result.updatedRecords++;
             }
@@ -317,7 +317,7 @@ export class MatchAdministratorService {
         message: "Sucess"
       }
       // transactional appdatasource create transaction
-      await AppDataSource.transaction(async (entityManager) => {
+      await AppDataSource.transaction(async (em) => {
         // create teams from matches[index].home_team and matches[index].away_team
         const homeTeams: Team[] = [];
         const awayTeams: Team[] = [];
@@ -373,11 +373,11 @@ export class MatchAdministratorService {
           result.data.push(newMatch);
           result.updatedRecords++;
         }
-        await entityManager.save(homeTeams);
-        await entityManager.save(awayTeams);
-        await entityManager.save(homeTeamPlayers);
-        await entityManager.save(awayTeamPlayers);
-        await entityManager.save(matchesToAdd);
+        await em.save(homeTeams);
+        await em.save(awayTeams);
+        await em.save(homeTeamPlayers);
+        await em.save(awayTeamPlayers);
+        await em.save(matchesToAdd);
         utilLib.loggingRes(req, result);
         return res.json(result);
       });
@@ -398,7 +398,7 @@ export class MatchAdministratorService {
         return res.status(400).json({ message: "Match UUID, Home Team, Away Team, and Point Config are required!" });
       }
       const matchesRepo = AppDataSource.getRepository(Matches);
-      await AppDataSource.transaction(async (entityManager) => {
+      await AppDataSource.transaction(async (em) => {
         const teamPLayersRepo = AppDataSource.getRepository(PlayerTeam);
         const homeTeamPlayers = await teamPLayersRepo.findBy({
             team_uuid: home_team_uuid,
@@ -411,7 +411,7 @@ export class MatchAdministratorService {
           let i = 0;
           for (const hp of homeTeamPlayers) {
             hp.player_uuid = home_team.players[i].uuid;
-            await entityManager.save(hp);
+            await em.save(hp);
             i++;
           }
         }
@@ -426,7 +426,7 @@ export class MatchAdministratorService {
           let i = 0;
           for (const ap of awayTeamPlayers) {
             ap.player_uuid = away_team.players[i].uuid;
-            await entityManager.save(ap);
+            await em.save(ap);
             i++;
           }
         }
@@ -440,7 +440,7 @@ export class MatchAdministratorService {
         dataExists.point_config_uuid = point_config_uuid || point_config_uuid;
         dataExists.time = date ? new Date(date) : dataExists.time;
         dataExists.court_field_uuid = court_field_uuid || dataExists.court_field_uuid;
-        await entityManager.save(dataExists);
+        await em.save(dataExists);
         utilLib.loggingRes(req, {data:dataExists, message:"Match updated successfully!"});
         return res.json({data:dataExists, message:"Match updated successfully!"});
       });
@@ -510,9 +510,9 @@ export class MatchAdministratorService {
       }
 
 
-      await AppDataSource.transaction(async (entityManager) => {
+      await AppDataSource.transaction(async (em) => {
 
-        const groupRepo = entityManager.getRepository(TournamentGroup);
+        const groupRepo = em.getRepository(TournamentGroup);
 
         // Get all existing groups for this tournament
         const existingGroups = await groupRepo.find({
@@ -524,13 +524,13 @@ export class MatchAdministratorService {
 
         // Create Set of new group UUIDs for fast lookup
         const newGroupUuids = new Set(groups.map((g: any) => g.uuid));
-        const teamRepoEM = entityManager.getRepository(Team);
+        const teamRepoEM = em.getRepository(Team);
         // Delete groups that are not in the new groups list
         for (const existingGroup of existingGroups) {
           if (!newGroupUuids.has(existingGroup.group_uuid)) {
             existingGroup.deletedBy = req.data?.uuid || undefined;
             existingGroup.deletedAt = new Date();
-            await entityManager.save(TournamentGroup, existingGroup);
+            await em.save(TournamentGroup, existingGroup);
 
             // Also update teams that belong to this deleted group
             const teamsInGroup = await teamRepoEM.find({
@@ -543,7 +543,7 @@ export class MatchAdministratorService {
               team.deletedBy = req.data?.uuid || undefined;
               team.deletedAt = new Date();
               team.group_uuid = null;
-              await entityManager.save(Team, team);
+              await em.save(Team, team);
             }
           }
         }
@@ -557,7 +557,7 @@ export class MatchAdministratorService {
           if (existingGroup) {
             // Update existing group
             existingGroup.group_name = group.name;
-            await entityManager.save(existingGroup);
+            await em.save(existingGroup);
             // update teams in existing group
             // get existing teams in group from db
             const existingGroupTeams = await teamRepoEM.find({
@@ -570,16 +570,19 @@ export class MatchAdministratorService {
             for (const groupTeam of existingGroupTeams) {
               if (!group.teams.some((t: any) => t.uuid === groupTeam.uuid)) {
                 groupTeam.group_uuid = null;
-                await entityManager.save(Team, groupTeam);
+                await em.save(Team, groupTeam);
               }
             }
             // if new group teams is not in the existing group teams in db, add them to group
-            for (const team of group.teams) {
+            for (let i = 0; i < group.teams.length; i++) {
+              const team = group.teams[i];
               if (!existingGroupTeams.some((t) => t.uuid === team.uuid)) {
                 const teamToUpdate = await teamRepoEM.findOneBy({ uuid: team.uuid });
                 if (teamToUpdate) {
                   teamToUpdate.group_uuid = group.uuid;
-                  await entityManager.save(Team, teamToUpdate);
+                  // Use position from request if available, otherwise calculate based on index
+                  teamToUpdate.position = team.position !== undefined ? team.position : i + 1;
+                  await em.save(Team, teamToUpdate);
                 }
               }
             }
@@ -595,13 +598,16 @@ export class MatchAdministratorService {
             newGroup.createdBy = req.data?.uuid || undefined;
             newGroup.updatedAt = new Date();
             newGroup.createdAt = new Date();
-            await entityManager.save(newGroup);
+            await em.save(newGroup);
             // add teams to new group
-            for (const team of group.teams) {
+            for (let i = 0; i < group.teams.length; i++) {
+              const team = group.teams[i];
               const teamToUpdate = await teamRepoEM.findOneBy({ uuid: team.uuid, tournament_uuid: tournament_uuid });
               if (teamToUpdate) {
                 teamToUpdate.group_uuid = newGroup.group_uuid;
-                await entityManager.save(Team, teamToUpdate);
+                  // Use position from request if available, otherwise calculate based on index
+                  teamToUpdate.position = team.position !== undefined ? team.position : i + 1;
+                await em.save(Team, teamToUpdate);
                 console.log("\nteamToUpdate--------------------\n",teamToUpdate);
                 
               }
@@ -611,7 +617,7 @@ export class MatchAdministratorService {
         }
         
         // Handle matches for all groups
-        await this.handleMatchesForGroups(entityManager, tournament_uuid, payload.data.matches, req);
+        await this.handleMatchesForGroups(em, tournament_uuid, payload.data.matches, req);
         // throw {message:`Match updated successfully!`};
         
         utilLib.loggingRes(req, { message: "Player team group updated successfully!" });
@@ -624,14 +630,142 @@ export class MatchAdministratorService {
     }
   }
 
+  async updateTeamGroupOnly(req:any, res:any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    const { groups } = req.body;
+    const payload = updateTeamGroupOnlyPayloadSchema.safeParse(req.body);
+    if (!payload.success) {
+      return res.status(400).json({ message: payload.error.message });
+    }
+    const tournament_uuid = uuid; // uuid from params is tournament_uuid
+    try {
+      if (!tournament_uuid || !groups) {
+        throw new Error("Tournament UUID and groups are required!");
+      }
+
+
+      await AppDataSource.transaction(async (em) => {
+
+        const groupRepo = em.getRepository(TournamentGroup);
+
+        // Get all existing groups for this tournament
+        const existingGroups = await groupRepo.find({
+          where: {
+            tournament_uuid: tournament_uuid,
+            deletedAt: IsNull(),
+          },
+        });
+
+        // Create Set of new group UUIDs for fast lookup
+        const newGroupUuids = new Set(groups.map((g: any) => g.uuid));
+        const teamRepoEM = em.getRepository(Team);
+        // Delete groups that are not in the new groups list
+        for (const existingGroup of existingGroups) {
+          if (!newGroupUuids.has(existingGroup.group_uuid)) {
+            existingGroup.deletedBy = req.data?.uuid || undefined;
+            existingGroup.deletedAt = new Date();
+            await em.save(TournamentGroup, existingGroup);
+
+            // Also update teams that belong to this deleted group
+            const teamsInGroup = await teamRepoEM.find({
+              where: {
+                group_uuid: existingGroup.group_uuid,
+                deletedAt: IsNull(),
+              },
+            });
+            for (const team of teamsInGroup) {
+              team.group_uuid = null;
+              await em.save(Team, team);
+            }
+          }
+        }
+
+        // Process each group in the new list
+        for (const group of groups) {
+          const existingGroup = existingGroups.find(
+            (g) => g.group_uuid === group.uuid && g.deletedAt === null
+          );
+          // EXISTING GROUP LOGIC START
+          if (existingGroup) {
+            // Update existing group
+            existingGroup.group_name = group.name;
+            await em.save(existingGroup);
+            // update teams in existing group
+            // get existing teams in group from db
+            const existingGroupTeams = await teamRepoEM.find({
+              where: {
+                group_uuid: existingGroup.group_uuid,
+                deletedAt: IsNull(),
+              },
+            });
+            // if existing group teams in db is not in the new group teams, remove them from group
+            for (const groupTeam of existingGroupTeams) {
+              if (!group.teams.some((t: any) => t.uuid === groupTeam.uuid)) {
+                groupTeam.group_uuid = null;
+                await em.save(Team, groupTeam);
+              }
+            }
+            // if new group teams is not in the existing group teams in db, add them to group
+            for (let i = 0; i < group.teams.length; i++) {
+              const team = group.teams[i];
+              if (!existingGroupTeams.some((t) => t.uuid === team.uuid)) {
+                const teamToUpdate = await teamRepoEM.findOneBy({ uuid: team.uuid });
+                if (teamToUpdate) {
+                  teamToUpdate.group_uuid = group.uuid;
+                  // Use position from request if available, otherwise calculate based on index
+                  teamToUpdate.position = team.position !== undefined ? team.position : i + 1;
+                  await em.save(Team, teamToUpdate);
+                }
+              }
+            }
+
+          // EXISTING GROUP LOGIC END
+          } else {
+            // NEW GROUP LOGIC START
+            // Create new group
+            const newGroup = new TournamentGroup();
+            newGroup.group_uuid = group.uuid || uuidv4();
+            newGroup.tournament_uuid = tournament_uuid;
+            newGroup.group_name = group.name;
+            newGroup.createdBy = req.data?.uuid || undefined;
+            newGroup.updatedAt = new Date();
+            newGroup.createdAt = new Date();
+            await em.save(newGroup);
+            // add teams to new group
+            for (let i = 0; i < group.teams.length; i++) {
+              const team = group.teams[i];
+              const teamToUpdate = await teamRepoEM.findOneBy({ uuid: team.uuid, tournament_uuid: tournament_uuid });
+              if (teamToUpdate) {
+                teamToUpdate.group_uuid = newGroup.group_uuid;
+                  // Use position from request if available, otherwise calculate based on index
+                  teamToUpdate.position = team.position !== undefined ? team.position : i + 1;
+                await em.save(Team, teamToUpdate);
+                
+              }
+            }
+            // NEW GROUP LOGIC END
+          }
+        }
+        
+        utilLib.loggingRes(req, { message: "Team group updated successfully!" });
+        return res.json({ message: "Team group updated successfully!" });
+      });
+    } catch (error: any) {
+      console.log(error);
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
   private async handleMatchesForGroups(
-    entityManager: EntityManager,
+    em: EntityManager,
     tournament_uuid: string,
     matches: UpdateGroupPayloadData['matches'],
     req: any
   ): Promise<void> {
-    const matchesRepo = entityManager.getRepository(Matches);
-    const groupRepo = entityManager.getRepository(TournamentGroup);
+    const matchesRepo = em.getRepository(Matches);
+    const groupRepo = em.getRepository(TournamentGroup);
     const groups = await groupRepo.findBy({
       tournament_uuid: tournament_uuid,
       deletedAt: IsNull(),
@@ -640,6 +774,8 @@ export class MatchAdministratorService {
     const existingMatches = await matchesRepo.find({
       where: {
         tournament_uuid: tournament_uuid,
+        round: -1,
+        group_uuid: In(groups.map((group) => group.group_uuid)),
         deletedAt: IsNull(),
       },
     });
@@ -654,7 +790,7 @@ export class MatchAdministratorService {
       if (!newMatchUuids.has(existingMatch.uuid)) {
         existingMatch.deletedBy = req.data?.uuid || undefined;
         existingMatch.deletedAt = new Date();
-        await entityManager.save(existingMatch);
+        await em.save(existingMatch);
       }
     }
 
@@ -674,7 +810,7 @@ export class MatchAdministratorService {
             existingMatch.group_uuid = group_uuid; // Associate with group
             existingMatch.tournament_group_index = match.groupKey || undefined;
             existingMatch.seed_index = -1;
-            await entityManager.save(existingMatch);
+            await em.save(existingMatch);
           } else {
             // Create new match
             const newMatch = new Matches();
@@ -690,9 +826,124 @@ export class MatchAdministratorService {
             newMatch.tournament_group_index = match.groupKey || undefined;
             newMatch.seed_index = -1;
             newMatch.createdBy = req.data?.uuid || undefined;
-            await entityManager.save(newMatch);
+            await em.save(newMatch);
           }
         }
+    }
+  }
+
+  async updateMultipleGroupMatches(req:any, res:any) {
+    const utilLib = Util.getInstance();
+    const { tournament_uuid, matches } = req.body;
+    const payload = updateMultipleMatchesPayloadSchema.safeParse(req.body);
+    if (!payload.success) {
+      return res.status(400).json({ message: payload.error.message });
+    }
+    try {
+      if (!tournament_uuid || !matches) {
+        throw new Error("Tournament UUID and matches are required!");
+      }
+      
+      // Transform matches from UpdateMatchPayload to UpdateGroupPayloadData['matches'] format
+      const transformedMatches = matches.map((match: UpdateMatchPayload) => ({
+        uuid: match.uuid,
+        home_team_uuid: match.home_team_uuid,
+        away_team_uuid: match.away_team_uuid,
+        court_field_uuid: match.court_field_uuid || '',
+        time: match.time || '',
+        group_uuid: match.group_uuid || null, // Will be determined by handleMatchesForGroups
+        status: match.status || 'UPCOMING',
+        groupKey: match.group || 0, // Map group to groupKey
+      }));
+      
+      await AppDataSource.transaction(async (em) => {
+        await this.handleMatchesForGroups(em, tournament_uuid, transformedMatches, req);
+      });
+      
+      return res.status(200).json({ message: "Match updated successfully!" });
+    } catch (error) {
+      console.error("Error updating match:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  async updateMultipleKnockoutMatches(req:any, res:any) {
+    const utilLib = Util.getInstance();
+    const { tournament_uuid, matches } = req.body;
+    const payload = updateMultipleMatchesPayloadSchema.safeParse(req.body);
+    if (!payload.success) {
+      return res.status(400).json({ message: payload.error.message });
+    }
+    try {
+      if (!tournament_uuid || !matches) {
+        throw new Error("Tournament UUID and matches are required!");
+      }
+      
+      // Validate that all matches are knockout matches
+      for (const match of matches) {
+        if (match.group_uuid && match.group_uuid !== '') {
+          throw new Error("Knockout matches cannot have group_uuid!");
+        }
+        if (match.round === undefined || match.round < 0) {
+          throw new Error("Knockout matches must have round >= 0!");
+        }
+        if (match.seed_index === undefined || match.seed_index < 0) {
+          throw new Error("Knockout matches must have seed_index >= 0!");
+        }
+      }
+      
+      const matchesRepo = AppDataSource.getRepository(Matches);
+      const existingKnockoutMatches = await matchesRepo.find({
+        where: {
+          tournament_uuid: tournament_uuid,
+          group_uuid: IsNull(), // Only knockout matches
+          seed_index: MoreThanOrEqual(0),
+          round: MoreThanOrEqual(0),
+          deletedAt: IsNull(),
+        },
+      });
+      
+      await AppDataSource.transaction(async (em) => {
+        // soft delete existing knockout matches
+        for (const existingMatch of existingKnockoutMatches) {
+          existingMatch.deletedBy = req.data?.uuid || undefined;
+          existingMatch.deletedAt = new Date();
+          await em.save(existingMatch);
+        }
+        
+        // add new knockout matches
+        const newMatches = matches.map((match: UpdateMatchPayload) => {
+          const newMatch = new Matches();
+          newMatch.uuid = match.uuid || uuidv4();
+          newMatch.tournament_uuid = tournament_uuid;
+          newMatch.home_team_uuid = match.home_team_uuid;
+          newMatch.away_team_uuid = match.away_team_uuid;
+          newMatch.court_field_uuid = match.court_field_uuid || null;
+          newMatch.status = (match.status as MatchStatus) || MatchStatus.UPCOMING;
+          newMatch.time = match.time ? new Date(match.time) : undefined;
+          newMatch.round = match.round || 0;
+          newMatch.tournament_group_index = undefined; // No group for knockout
+          newMatch.home_group_index = match.home_group_index || undefined;
+          newMatch.home_group_position = match.home_group_position || undefined;
+          newMatch.home_group_uuid = match.home_group_uuid || undefined;
+          newMatch.away_group_index = match.away_group_index || undefined;
+          newMatch.away_group_position = match.away_group_position || undefined;
+          newMatch.away_group_uuid = match.away_group_uuid || undefined;
+          newMatch.seed_index = match.seed_index || 0;
+          newMatch.group_uuid = null; // Ensure no group for knockout matches
+          newMatch.createdBy = req.data?.uuid || undefined;
+          return newMatch;
+        });
+        
+        await em.save(newMatches);
+      });
+      
+      utilLib.loggingRes(req, { message: "Knockout matches updated successfully" });
+      return res.status(200).json({ message: "Knockout matches updated successfully!" });
+    } catch (error: any) {
+      console.error("Error updating knockout matches:", error);
+      utilLib.loggingError(req, error.message);
+      return res.status(500).json({ message: error.message });
     }
   }
 
@@ -715,12 +966,12 @@ export class MatchAdministratorService {
           deletedAt: IsNull(),
         },
       });
-      await AppDataSource.transaction(async (entityManager) => {
+      await AppDataSource.transaction(async (em) => {
         // soft delete existing matches
         for (const existingMatch of existingMatches) {
           existingMatch.deletedBy = req.data?.uuid || undefined;
           existingMatch.deletedAt = new Date();
-          await entityManager.save(existingMatch);
+          await em.save(existingMatch);
         }
         // add new matches
         const newMatches = matches.map((match: UpdateMatchPayload) => {
@@ -742,7 +993,7 @@ export class MatchAdministratorService {
           newMatch.createdBy = req.data?.uuid || undefined;
           return newMatch;
         });
-          await entityManager.save(newMatches);
+          await em.save(newMatches);
       }).catch((error) => {
         utilLib.loggingError(req, error.message);
         return res.status(400).json({ message: error.message });
@@ -759,7 +1010,7 @@ export class MatchAdministratorService {
   async updateMatch(req:any, res:any) {
     const utilLib = Util.getInstance();
     const { uuid } = req.params;
-    const { match } = req.body;
+    const match = req.body;
     try {
       if (!uuid || !match) {
         throw new Error("Match UUID and match are required!");
@@ -768,8 +1019,8 @@ export class MatchAdministratorService {
       if (!payload.success) {
         return res.status(400).json({ message: payload.error.message });
       }
-      await AppDataSource.transaction(async (entityManager) => {
-        const matchesRepo = entityManager.getRepository(Matches);
+      await AppDataSource.transaction(async (em) => {
+        const matchesRepo = em.getRepository(Matches);
         const existingMatch = await matchesRepo.findOneBy({ uuid, deletedAt: IsNull() });
         if (!existingMatch) {
           return res.status(400).json({ message: "Match not found!" });
@@ -787,7 +1038,7 @@ export class MatchAdministratorService {
         existingMatch.away_group_position = match.away_group_position || existingMatch.away_group_position;
         existingMatch.seed_index = match.seed_index || existingMatch.seed_index;
         existingMatch.updatedAt = new Date();
-        await entityManager.save(existingMatch);
+        await em.save(existingMatch);
         utilLib.loggingRes(req, { data: existingMatch, message: "Match updated successfully!" });
         return res.json({ data: existingMatch, message: "Match updated successfully!" });
       });

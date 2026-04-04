@@ -97,6 +97,9 @@ export class Tournament {
   @Column({ type: "int", nullable: true })
   total_group: number | undefined;
 
+  @Column({ type: "int", default: 1 })
+  group_qualifier: number = 1;
+
   @Column({ type: "int", nullable: true })
   max_player: number | undefined;
 

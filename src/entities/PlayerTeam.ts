@@ -30,7 +30,10 @@ export enum PTStatusEnum {
     
     @Column()
     player_uuid: string | undefined = "";
-  
+
+    @Column({ type: "boolean", default: false })
+    captain: boolean = false;
+
     @Column()
     team_uuid: string | undefined = "";
 

@@ -111,6 +111,9 @@ export const route = (router: Router) => {
   router.put("/api/player/verify/:uuid", logMiddleware, authMiddleware, playerCon.update);
   router.put("/api/player/update-access/:uuid", logMiddleware, authMiddleware, playerCon.updateAccess);
   router.delete("/api/player/delete/:uuid", logMiddleware, authMiddleware, playerCon.delete);
+  router.get("/api/player/tournament/draft-pick/:uuid", logMiddleware, playerCon.getTournamentDraftPicks);
+  router.get("/api/player/tournament/status/:uuid", logMiddleware, authMiddleware, playerCon.getTournamentJoinStatus);
+  router.get("/api/player/tournament/draft-turn/:uuid", logMiddleware, authMiddleware, playerCon.getDraftPickTurn);
 
   // Tournament
   router.get("/api/tournament/list", logMiddleware, authMiddleware, tourCon.list);
@@ -120,11 +123,20 @@ export const route = (router: Router) => {
   router.put("/api/tournament/edit/:uuid", logMiddleware, authMiddleware, tourCon.update);
   router.put("/api/tournament/publish/:uuid", logMiddleware, authMiddleware, tourCon.publish);
   router.delete("/api/tournament/delete/:uuid", logMiddleware, authMiddleware, tourCon.delete);
+  router.put("/api/tournament/draft-pick/position/:uuid", logMiddleware, authMiddleware, playerCon.updateTournamentDraftPickPosition);
+  router.post("/api/tournament/draft-pick/start/:uuid", logMiddleware, authMiddleware, playerCon.startDraftPick);
+  router.post("/api/tournament/draft-pick/assign/:uuid", logMiddleware, authMiddleware, playerCon.assignDraftPick);
+  router.post("/api/tournament/draft-pick/:uuid", logMiddleware, authMiddleware, playerCon.addTournamentDraftPick);
   
   // Tournament Participant Management
   router.post("/api/tournament/:uuid/join", logMiddleware, authMiddleware, tourCon.joinTournament);
   router.put("/api/tournament/:tournamentUuid/players/:playerUuid/approval", logMiddleware, authMiddleware, tourCon.updateJoinRequestStatus);
-  
+  router.put("/api/tournament/:tournamentUuid/teams/approval", logMiddleware, authMiddleware, tourCon.updateTeamJoinRequestStatus);
+  router.get("/api/tournament/detail/team/participants/:tournamentUuid", logMiddleware, authMiddleware, tourCon.getTeamParticipants);
+  router.post("/api/tournament/:uuid/add-team", logMiddleware, authMiddleware, tourCon.addTeam);
+  router.put("/api/tournament/edit/groups/:uuid", logMiddleware, authMiddleware, matchCon.updateTournamentGroup);
+  router.put("/api/tournament/edit/groups/teams/:uuid", logMiddleware, authMiddleware, matchCon.updateTeamGroupOnly);
+
   // Rule
   router.post("/api/rule/create", logMiddleware, authMiddleware, ruleCon.create);
   router.put("/api/rule/edit/:uuid", logMiddleware, authMiddleware, ruleCon.update);
@@ -132,7 +144,6 @@ export const route = (router: Router) => {
   
   // Team
   router.put("/api/tournament/edit/participant/:uuid", logMiddleware, authMiddleware, teamCon.generateTeams);
-  router.put("/api/tournament/edit/groups/:uuid", logMiddleware, authMiddleware, matchCon.updateTournamentGroup);
   router.get("/api/tournament/detail/participants/:uuid", logMiddleware, authMiddleware, teamCon.listPlayerTeam);
   router.get("/api/tournament/detail/teams/:uuid", logMiddleware, authMiddleware, teamCon.listTeams);
   router.get("/api/tournament/:uuid/sponsors", logMiddleware, authMiddleware, tourCon.listSponsors);
@@ -258,6 +269,7 @@ export const route = (router: Router) => {
   router.get("/api/player/tournament/:uuid", logMiddleware, authMiddleware, tourCon.publicDetail);
   router.get("/api/public/kudos", logMiddleware, authMiddleware, kudosCon.playerKudosList);
   router.post("/api/match/kudos", logMiddleware, authMiddleware, kudosCon.givePlayerKudos);
+  
   // Public API
   // Home
   router.get("/api/public/kudos-list", logMiddleware, kudosCon.list);

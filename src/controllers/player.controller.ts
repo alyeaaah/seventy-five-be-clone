@@ -10,6 +10,10 @@ import { registerSchema, updateAccessPayloadSchema } from "../schemas/player.sch
 import { League } from "../entities/League";
 import { EmailVerification } from "../entities/EmailVerification";
 import { emailService } from "../services/email.service";
+import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
+import { Team } from "../entities/Team";
+import { PlayerTeam } from "../entities/PlayerTeam";
+import { Tournament } from "../entities/Tournament";
 
 export default class PlayerController {
   async create(req: any, res: any) {
@@ -776,6 +780,547 @@ export default class PlayerController {
 
       utilLib.loggingRes(req, { data: result, message: "Player access updated successfully" });
       return res.json({ data: result, message: "Player access updated successfully" });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async getTournamentJoinStatus(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    const playerUuid = req.data?.uuid; // Get current player from auth middleware
+    
+    try {
+      if (!playerUuid) {
+        throw new Error("Player authentication required!");
+      }
+
+      const playerTeamRepo = AppDataSource.getRepository(PlayerTeam);
+      const tourneyRepo = AppDataSource.getRepository(Tournament);
+      const tournamentData = await tourneyRepo.findOne({
+        where: { 
+          uuid: uuid,
+          deletedAt: IsNull() 
+        }
+      });
+      if (!tournamentData) {
+        throw new Error("Tournament not found!");
+      }
+      const playerTeam = await playerTeamRepo.findOne({
+        where: { 
+          player_uuid: playerUuid,
+          tournament_uuid: uuid,
+          deletedAt: IsNull() 
+        },
+        relations: {
+          player: true,
+          team: true
+        }
+      });
+      let draftPick;
+      if (tournamentData.draft_pick) {
+        const draftPickRepo = AppDataSource.getRepository(DraftPick);
+        draftPick = await draftPickRepo.findOne({
+          where: { 
+            player_uuid: playerUuid,
+            tournament_uuid: uuid,
+            deletedAt: IsNull() 
+          },
+        });
+      }
+
+      const result = {
+        hasJoined: !!playerTeam,
+        status: playerTeam?.status || null,
+        teamUuid: playerTeam?.team_uuid || null,
+        teamName: playerTeam?.team?.name || null,
+        joinedAt: playerTeam?.createdAt || null,
+        draftPick
+      };
+
+      utilLib.loggingRes(req, { data: result });
+      return res.json({ data: result });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async getDraftPickTurn(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    const playerUuid = req.data?.uuid; // Get current player from auth middleware
+    
+    try {
+      if (!playerUuid) {
+        throw new Error("Player authentication required!");
+      }
+
+      const draftPickRepo = AppDataSource.getRepository(DraftPick);
+      
+      // Find current picking player
+      const currentPickingPlayer = await draftPickRepo.findOne({
+        where: { 
+          tournament_uuid: uuid,
+          status: DraftPickStatus.PICKING,
+          deletedAt: IsNull() 
+        },
+        relations: {
+          player: true
+        }
+      });
+
+      // Find player's own draft pick status
+      const playerDraftPick = await draftPickRepo.findOne({
+        where: { 
+          tournament_uuid: uuid,
+          player_uuid: playerUuid,
+          deletedAt: IsNull() 
+        },
+        relations: {
+          player: true
+        },
+        order: {
+          position: 'ASC'
+        }
+      });
+
+      // Get all available seeded players for picking
+      const availableSeededPlayers = await draftPickRepo.find({
+        where: { 
+          tournament_uuid: uuid,
+          seeded: true,
+          drafted_by: "",
+          deletedAt: IsNull() 
+        },
+        relations: {
+          player: true
+        },
+        order: {
+          position: 'ASC'
+        }
+      });
+
+      const result = {
+        isPlayerTurn: currentPickingPlayer?.player_uuid === playerUuid,
+        currentPickingPlayer: currentPickingPlayer ? {
+          uuid: currentPickingPlayer.player_uuid,
+          name: currentPickingPlayer.player?.name,
+          nickname: currentPickingPlayer.player?.nickname,
+          pickingSince: currentPickingPlayer.pickingAt
+        } : null,
+        playerStatus: playerDraftPick ? {
+          status: playerDraftPick.status,
+          position: playerDraftPick.position,
+          seeded: playerDraftPick.seeded,
+          draftedBy: playerDraftPick.drafted_by,
+          partnerUuid: playerDraftPick.drafted_by || null
+        } : null,
+        availableSeededPlayers: availableSeededPlayers.map(player => ({
+          uuid: player.player_uuid,
+          name: player.player?.name,
+          nickname: player.player?.nickname,
+          position: player.position
+        }))
+      };
+
+      utilLib.loggingRes(req, { data: result });
+      return res.json({ data: result });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async getTournamentDraftPicks(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    try {
+      const draftPickRepo = AppDataSource.getRepository(DraftPick);
+      const draftPicks = await draftPickRepo.find({
+        where: { 
+          tournament_uuid: uuid,
+          deletedAt: IsNull(),
+          drafted_by: ""
+        },
+        relations: {
+          player: true
+        },
+        order: {
+          position: 'ASC',
+          createdAt: 'ASC'
+        }
+      });
+      const result = draftPicks.map((pick) => ({
+        ...pick,
+        name:pick.player?.name,
+        nickname: pick.player?.nickname,
+        username: pick.player?.username,
+        email:pick.player?.username
+        
+      }));
+
+      utilLib.loggingRes(req, { data: result });
+      return res.json({ data: result });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async addTournamentDraftPick(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    const { teams } = req.body;
+    
+    try {
+      // Validation
+      if (!teams || !Array.isArray(teams) || teams.length === 0) {
+        throw new Error("teams array is required");
+      }
+
+      await AppDataSource.transaction(async (em) => {
+        const draftPickRepo = em.getRepository(DraftPick);
+        const savedDraftPicks = [];
+
+        // Process each team in the array
+        for (const team of teams) {
+          const { player_uuid, team_uuid, position, status, seeded } = team;
+          
+          // Validate required fields for each team
+          if (!player_uuid || position === undefined || position === null || !status) {
+            throw new Error("player_uuid, position, and status are required for each team");
+          }
+
+          // Check if position already exists for this tournament
+          const existingPick = await draftPickRepo.find({
+            where: {
+              tournament_uuid: uuid,
+              deletedAt: IsNull()
+            }
+          });
+          let updatedPosition: number = position;
+          if (existingPick.find(p=>p.player_uuid == player_uuid)) {
+            throw new Error("Player already exists in this tournament");
+          }
+
+          if (existingPick.find(pick => pick.position === position && pick.seeded === seeded)) {
+            updatedPosition = (existingPick.filter(ep=>ep.seeded === seeded).sort((a, b) => a.position - b.position).pop()?.position || position) + 1;
+          }
+
+          // Create new draft pick
+          const newDraftPick = new DraftPick();
+          newDraftPick.player_uuid = player_uuid;
+          newDraftPick.teams_uuid = team_uuid || undefined;
+          newDraftPick.tournament_uuid = uuid;
+          newDraftPick.position = updatedPosition || position;
+          newDraftPick.status = status;
+          newDraftPick.seeded = seeded || false;
+          newDraftPick.updatedBy = req.data?.uuid || null;
+
+          const savedDraftPick = await draftPickRepo.save(newDraftPick);
+          savedDraftPicks.push(savedDraftPick);
+        }
+
+        utilLib.loggingRes(req, { data: savedDraftPicks, message: `${savedDraftPicks.length} draft picks added successfully` });
+        return res.json({ data: savedDraftPicks, message: `${savedDraftPicks.length} draft picks added successfully` });
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async updateTournamentDraftPickPosition(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    const { players } = req.body;
+    
+    try {
+      if (!uuid) {
+        throw new Error("Tournament UUID is required!");
+      }
+
+      if (!players || !Array.isArray(players) || players.length === 0) {
+        throw new Error("Players array is required!");
+      }
+
+      await AppDataSource.transaction(async (em) => {
+        const draftPickRepo = em.getRepository(DraftPick);
+        const updatedDraftPicks = [];
+
+        // Process each player in the array
+        for (const playerData of players) {
+          const { id, player_uuid, position, status, seeded } = playerData;
+
+          // Validate required fields
+          if (!id || !player_uuid || !position) {
+            throw new Error("ID, player_uuid, and position are required for all players!");
+          }
+
+          // Find existing draft pick
+          const existingDraftPick = await draftPickRepo.findOne({
+            where: { 
+              id: id,
+              tournament_uuid: uuid,
+              player_uuid:player_uuid,
+              deletedAt: IsNull() 
+            }
+          });
+
+          if (!existingDraftPick) {
+            throw new Error(`Draft pick with ID ${id} not found for this tournament!`);
+          }
+
+          // Update the draft pick
+          existingDraftPick.position = position;
+          existingDraftPick.status = status;
+          existingDraftPick.seeded = seeded;
+          existingDraftPick.updatedBy = req.data?.uuid || null;
+
+          const savedDraftPick = await draftPickRepo.save(existingDraftPick);
+          updatedDraftPicks.push(savedDraftPick);
+        }
+
+        utilLib.loggingRes(req, { data: updatedDraftPicks, message: `${updatedDraftPicks.length} draft pick positions updated successfully` });
+        return res.json({ data: updatedDraftPicks, message: `${updatedDraftPicks.length} draft pick positions updated successfully` });
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async startDraftPick(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid } = req.params;
+    
+    try {
+      if (!uuid) {
+        throw new Error("Tournament UUID is required!");
+      }
+
+      await AppDataSource.transaction(async (em) => {
+        const draftPickRepo = em.getRepository(DraftPick);
+        
+        // Find the player with seeded field 0, sort by position desc 
+        const players = await draftPickRepo.find({
+          where: { 
+            tournament_uuid: uuid,
+            seeded: false,
+            deletedAt: IsNull() 
+          },
+          order: { position: "DESC" }
+        });
+
+        if (players.length === 0) {
+          throw new Error("No player found with seeded field 0!");
+        }
+        
+        const lastPlayer = players[0];
+        lastPlayer.status = DraftPickStatus.PICKING;
+        lastPlayer.pickingAt = new Date();
+        await em.save(lastPlayer);
+
+
+        utilLib.loggingRes(req, { message: "Draft pick session started successfully" });
+        return res.json({ message: "Draft pick session started successfully" });
+      });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
+  async assignDraftPick(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const { uuid: tournamentUuid } = req.params;
+    const { player_uuid, partner_uuid } = req.body;
+    
+    try {
+      if (!tournamentUuid) {
+        throw new Error("Tournament UUID is required!");
+      }
+
+      if (!player_uuid || !partner_uuid) {
+        throw new Error("Player UUID and partner UUID are required!");
+      }
+
+      if (player_uuid === partner_uuid) {
+        throw new Error("Player and partner cannot be the same!");
+      }
+
+      await AppDataSource.transaction(async (em) => {
+        const draftPickRepo = em.getRepository(DraftPick);
+        const teamRepo = em.getRepository(Team);
+        const playerTeamRepo = em.getRepository(PlayerTeam);
+        
+        // Find the player who is picking
+        // Find the partner (seeded player)
+        const [pickingPlayer, partnerPlayer, pickingPlayerTeam, partnerPlayerTeam] = await Promise.all([
+          draftPickRepo.findOne({
+            where: { 
+              tournament_uuid: tournamentUuid,
+              player_uuid: player_uuid,
+              seeded:false,
+              deletedAt: IsNull() 
+            }
+          }),
+          draftPickRepo.findOne({
+            where: { 
+              tournament_uuid: tournamentUuid,
+              player_uuid: partner_uuid,
+              seeded: true,
+              deletedAt: IsNull() 
+            }
+          }),
+          playerTeamRepo.findOne({
+            where: {
+              player_uuid: player_uuid,
+              tournament_uuid: tournamentUuid,
+              deletedAt: IsNull()
+            }
+          }),
+          playerTeamRepo.findOne({
+            where: {
+              player_uuid: partner_uuid,
+              tournament_uuid: tournamentUuid,
+              deletedAt: IsNull()
+            }
+          })
+        ]);
+
+        if (!pickingPlayer) {
+          throw new Error("Picking player not found!");
+        }
+        if (!partnerPlayer) {
+          throw new Error("Partner player not found!");
+        }
+        if (partnerPlayer.drafted_by.length > 2) {
+          throw new Error("Partner player already selected!");
+        }
+        if (!partnerPlayerTeam) {
+          throw new Error("Partner player team not found!");
+        }
+        if (!pickingPlayerTeam) {
+          throw new Error("Picking player team not found!");
+        }
+
+        // Update picking player status to PICKED and set drafted_by
+        pickingPlayer.status = DraftPickStatus.PICKED;
+        pickingPlayer.drafted_by = partner_uuid;
+        pickingPlayer.updatedBy = req.data?.uuid || null;
+
+        // Update partner player status to PICKED and set drafted_by
+        partnerPlayer.status = DraftPickStatus.PICKED;
+        partnerPlayer.drafted_by = player_uuid;
+        partnerPlayer.updatedBy = req.data?.uuid || null;
+        const teamUuid = uuidv4()
+        partnerPlayerTeam.team_uuid = pickingPlayerTeam.team_uuid || teamUuid;
+        partnerPlayerTeam.captain = true;
+        pickingPlayerTeam.captain = false;
+        pickingPlayerTeam.team_uuid = pickingPlayerTeam.team_uuid || teamUuid;
+        await Promise.all([
+          draftPickRepo.save(pickingPlayer),
+          draftPickRepo.save(partnerPlayer),
+          playerTeamRepo.save(partnerPlayerTeam),
+          playerTeamRepo.save(pickingPlayerTeam)
+        ]);
+
+        // Create team record// Check if team UUID already exists
+        const createdTeamUuid = pickingPlayerTeam.team_uuid || teamUuid;
+        const existingTeam = await teamRepo.findOne({
+          where: {
+            uuid: createdTeamUuid,
+            deletedAt: IsNull()
+          }
+        });
+        
+        // Get current teams count for naming
+        const currentTeams = await teamRepo.find({
+          where: {
+            tournament_uuid: tournamentUuid,
+            deletedAt: IsNull()
+          }
+        });
+        let savedTeam;
+
+        if (!existingTeam) {
+          const team = new Team();
+          team.uuid = createdTeamUuid;
+          team.tournament_uuid = tournamentUuid;
+          
+          // Generate unique team name
+          let teamNumber = currentTeams.length + 1;
+          let teamName = `Team ${teamNumber}`;
+          
+          // Check if team name already exists and increment if needed
+          const existingTeamWithName = await teamRepo.findOne({
+            where: {
+              name: teamName,
+              tournament_uuid: tournamentUuid,
+              deletedAt: IsNull()
+            }
+          });
+          
+          if (existingTeamWithName) {
+            // Find the next available team number
+            const usedNumbers = currentTeams
+              .filter(t => t.name.startsWith('Team '))
+              .map(t => {
+                const match = t.name.match(/Team (\d+)/);
+                return match ? parseInt(match[1]) : 0;
+              })
+              .sort((a, b) => b - a);
+            
+            teamNumber = usedNumbers.length > 0 ? usedNumbers[0] + 1 : currentTeams.length + 1;
+            teamName = `Team ${teamNumber}`;
+          }
+          
+          team.name = teamName;
+          team.createdBy = 'admin';
+          savedTeam = await teamRepo.save(team);
+        }
+
+        // start update next draftpick picking
+         const nextPlayers = await draftPickRepo.find({
+          where: { 
+            tournament_uuid: tournamentUuid,
+            seeded: false,
+            drafted_by: "",
+            status: DraftPickStatus.AVAILABLE,
+            deletedAt: IsNull() 
+          },
+          order: { position: "DESC" }
+        });
+
+        if (nextPlayers.length > 0) {
+          const lastPlayer = nextPlayers[0];
+          lastPlayer.status = DraftPickStatus.PICKING;
+          lastPlayer.pickingAt = new Date();
+          await em.save(lastPlayer);
+        }
+
+        
+        
+        utilLib.loggingRes(req, { 
+          data: { 
+            team: savedTeam,
+            pickingPlayer,
+            partnerPlayer
+          }, 
+          message: "Draft pick partner assigned successfully" 
+        });
+        return res.json({ 
+          data: { 
+            team: savedTeam,
+            pickingPlayer,
+            partnerPlayer
+          }, 
+          message: "Draft pick partner assigned successfully" 
+        });
+      });
     } catch (error: any) {
       utilLib.loggingError(req, error.message);
       return res.status(400).json({ message: error.message });

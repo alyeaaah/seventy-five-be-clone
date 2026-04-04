@@ -60,6 +60,15 @@ export class MatchService {
       const result = data.map((match: any) => {
         const isHome = !["TBD", "BYE"].includes(match.home_team_uuid);
         const isAway = !["TBD", "BYE"].includes(match.away_team_uuid);
+
+        if ( match.seed_index == 3 && match.round == 0) {
+          console.log(match?.home_team_uuid,"home--------------------------------------\n\n ");
+          console.log(match?.away_team_uuid, "away--------------------------------------\n\n ");
+          console.log("\n\n \n\n ------------------------h player--------------------------\n",match.home_team?.players);
+          console.log("\n\n \n\n ------------------------a player--------------------------\n",match.away_team?.players);
+        } else {
+          // return null;
+        }
         return {
           ...match,
           uuid: match.uuid,
@@ -115,7 +124,7 @@ export class MatchService {
         };
       });
 
-      utilLib.loggingRes(req, { data: result, totalRecords, currentPage: Number(page || "1"), totalPages: Math.ceil(totalRecords / Number(limit || "10")) });
+      // utilLib.loggingRes(req, { data: result, totalRecords, currentPage: Number(page || "1"), totalPages: Math.ceil(totalRecords / Number(limit || "10")) });
 
 
       return res.json({
@@ -738,7 +747,7 @@ export class MatchService {
   }
   async publicTournamentGroup(req: any, res: any) {
     const utilLib = Util.getInstance();
-    const { tournament_uuid } = req.params;
+    const { uuid: tournament_uuid } = req.params;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
       const dataExists = await tRepo.findOneBy({
@@ -750,14 +759,6 @@ export class MatchService {
       }
       const teamRepo = AppDataSource.getRepository(Team);
       const tournamentGroupRepo = AppDataSource.getRepository(TournamentGroup);
-      
-      // Get all teams for this tournament
-      const teams = await teamRepo.find({
-        where: {
-          tournament_uuid: tournament_uuid,
-          deletedAt: IsNull(),
-        },
-      });
       
       // Get all groups for this tournament
       const groups = await tournamentGroupRepo.find({
@@ -772,25 +773,41 @@ export class MatchService {
             }
           },
         },
+        order: {
+          group_name: "ASC"
+        }
       });
       
       const groupedDatas  = groups.map(gd => ({
         ...gd,
-        teams: gd.teams?.map(gdt => ({
+        teams: gd.teams?.sort((a, b) => (a.position || 0) - (b.position || 0)).map(gdt => ({
           ...gdt,
-          players: gdt.players?.map(gdp => ({
+          players: gdt.players?.sort((a, b) => {
+          // First sort by name
+          const nameComparison = (a.player?.name || '').localeCompare(b.player?.name || '');
+          if (nameComparison !== 0) return nameComparison;
+          
+          // If names are the same, sort by captain (captain first)
+          return (b.captain ? 1 : 0) - (a.captain ? 1 : 0);
+        }).map(gdp => ({
             ...gdp.player,
           })) || []
         })) || [] 
       }));
-      console.log(JSON.stringify(groupedDatas));
       
       // Group teams by group_uuid
       const groupedData  = groups.map(gd => groupResponseSchema.parse({
         ...gd,
-        teams: gd.teams?.map(gdt => ({
+        teams: gd.teams?.sort((a, b) => (a.position || 0) - (b.position || 0)).map(gdt => ({
           ...gdt,
-          players: gdt.players?.map(gdp => ({
+          players: gdt.players?.sort((a, b) => {
+          // First sort by name
+          const nameComparison = (a.player?.name || '').localeCompare(b.player?.name || '');
+          if (nameComparison !== 0) return nameComparison;
+          
+          // If names are the same, sort by captain (captain first)
+          return (b.captain ? 1 : 0) - (a.captain ? 1 : 0);
+        }).map(gdp => ({
             ...gdp.player,
           })) || []
         })) || [] 
@@ -805,4 +822,5 @@ export class MatchService {
     } 
   } 
 }
+
 
