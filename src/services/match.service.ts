@@ -746,10 +746,24 @@ export class MatchService {
           court: match.tournament_uuid ? match.court_field.name : `${match.court_field?.court?.name || ""} - ${match.court_field.name}`,
         };
       });
-
-      utilLib.loggingRes(req, { data: result, totalRecords, currentPage: Number(page || "1"), totalPages: Math.ceil(totalRecords / Number(limit || "10")) });
+      const finalResult = result.sort((a, b) => {
+        // First sort by time
+        const timeA = a.time ? new Date(a.time).getTime() : 0;
+        const timeB = b.time ? new Date(b.time).getTime() : 0;
+        
+        if (timeA !== timeB) {
+          return timeA - timeB;
+        }
+        
+        // Then sort by court name
+        const courtA = a.court || '';
+        const courtB = b.court || '';
+        
+        return courtA.localeCompare(courtB);
+      });
+      utilLib.loggingRes(req, { data: finalResult, totalRecords, currentPage: Number(page || "1"), totalPages: Math.ceil(totalRecords / Number(limit || "10")) });
       return res.json({
-        data: result,
+        data: finalResult,
         totalRecords,
         currentPage: Number(page || "1"),
         totalPages: Math.ceil(totalRecords / Number(limit || "10")),
