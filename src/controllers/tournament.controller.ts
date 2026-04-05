@@ -597,8 +597,11 @@ export default class TournamentController {
   getTeamParticipants = async (req: any, res: any) => {
     const utilLib = Util.getInstance();
     const { tournamentUuid } = req.params;
-    const { status, page = 1, limit = 200 } = req.query;
+    let { status, page = 1, limit = 200 } = req.query;
     const adminUuid = req.data?.uuid || req.user?.uuid;
+    if (!adminUuid && status?.includes("reject")) {
+      status = "approved,confirmed,requested"
+    }
 
     try {
       if (!tournamentUuid) {

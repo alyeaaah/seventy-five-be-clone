@@ -133,6 +133,7 @@ export const route = (router: Router) => {
   router.put("/api/tournament/:tournamentUuid/players/:playerUuid/approval", logMiddleware, authMiddleware, tourCon.updateJoinRequestStatus);
   router.put("/api/tournament/:tournamentUuid/teams/approval", logMiddleware, authMiddleware, tourCon.updateTeamJoinRequestStatus);
   router.get("/api/tournament/detail/team/participants/:tournamentUuid", logMiddleware, authMiddleware, tourCon.getTeamParticipants);
+
   router.post("/api/tournament/:uuid/add-team", logMiddleware, authMiddleware, tourCon.addTeam);
   router.put("/api/tournament/edit/groups/:uuid", logMiddleware, authMiddleware, matchCon.updateTournamentGroup);
   router.put("/api/tournament/edit/groups/teams/:uuid", logMiddleware, authMiddleware, matchCon.updateTeamGroupOnly);
@@ -263,6 +264,7 @@ export const route = (router: Router) => {
   router.get("/api/public/matches/player/:player_uuid", logMiddleware, matchCon.playerMatches);
   router.get("/api/public/tournament/player/upcoming/:player_uuid", logMiddleware, playerBasedCon.getUpcomingTournamentByPlayer);
   router.get("/api/public/tournament/player/joined/:player_uuid", logMiddleware, playerBasedCon.getTournamentsByPlayer);
+  router.get("/api/public/tournament/detail/participants/:tournamentUuid", logMiddleware, tourCon.getTeamParticipants);
   router.get("/api/public/tournament/groups/:uuid", logMiddleware, matchCon.publicTournamentGroup);
   router.get("/api/player/tournament/joined", logMiddleware, authMiddleware, playerBasedCon.getTournamentsByPlayer);
   router.get("/api/player/tournament/upcoming", logMiddleware, authMiddleware, playerBasedCon.getUpcomingTournamentByPlayer);
