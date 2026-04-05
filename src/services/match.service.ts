@@ -62,10 +62,10 @@ export class MatchService {
         const isAway = !["TBD", "BYE"].includes(match.away_team_uuid);
 
         if ( match.seed_index == 3 && match.round == 0) {
-          console.log(match?.home_team_uuid,"home--------------------------------------\n\n ");
-          console.log(match?.away_team_uuid, "away--------------------------------------\n\n ");
-          console.log("\n\n \n\n ------------------------h player--------------------------\n",match.home_team?.players);
-          console.log("\n\n \n\n ------------------------a player--------------------------\n",match.away_team?.players);
+          // console.log(match?.home_team_uuid,"home--------------------------------------\n\n ");
+          // console.log(match?.away_team_uuid, "away--------------------------------------\n\n ");
+          // console.log("\n\n \n\n ------------------------h player--------------------------\n",match.home_team?.players);
+          // console.log("\n\n \n\n ------------------------a player--------------------------\n",match.away_team?.players);
         } else {
           // return null;
         }
@@ -124,11 +124,26 @@ export class MatchService {
         };
       });
 
-      // utilLib.loggingRes(req, { data: result, totalRecords, currentPage: Number(page || "1"), totalPages: Math.ceil(totalRecords / Number(limit || "10")) });
+      const finalResult = result.sort((a, b) => {
+        // First sort by time
+        const timeA = a.time ? new Date(a.time).getTime() : 0;
+        const timeB = b.time ? new Date(b.time).getTime() : 0;
+        
+        if (timeA !== timeB) {
+          return timeA - timeB;
+        }
+        
+        // Then sort by court name
+        const courtA = a.court || '';
+        const courtB = b.court || '';
+        
+        return courtA.localeCompare(courtB);
+      });
 
+      utilLib.loggingRes(req, { data: finalResult, totalRecords, currentPage: Number(page || "1"), totalPages: Math.ceil(totalRecords / Number(limit || "10")) });
 
       return res.json({
-        data: result,
+        data: finalResult,
         totalRecords,
         currentPage: Number(page || "1"),
         totalPages: Math.ceil(totalRecords / Number(limit || "10")),
