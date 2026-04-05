@@ -276,6 +276,7 @@ export const route = (router: Router) => {
   // Home
   router.get("/api/public/kudos-list", logMiddleware, kudosCon.list);
   router.get("/api/public/match/upcoming", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchList(req, res, MatchStatus.UPCOMING));
+  router.get("/api/public/match/recent", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchList(req, res, MatchStatus.ENDED));
   router.get("/api/public/match/ongoing", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchList(req, res, MatchStatus.ONGOING));
   router.get("/api/public/match/:uuid", logMiddleware, (req: Request, res: Response) => matchCon.publicMatchDetail(req, res));
   router.get("/api/public/match/point-config/:uuid", logMiddleware, (req: Request, res: Response) => pointConfigCon.publicDetail(req, res));
