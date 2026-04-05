@@ -260,25 +260,29 @@ export class TournamentService {
     };
   }
 
-  async updateTeamJoinRequestStatus(teamUuid: string, tournamentUuid: string, adminUuid: string, status: PTStatusEnum) {
+  async updateTeamJoinRequestStatus(playerTeamUuid: string, tournamentUuid: string, adminUuid: string, status: PTStatusEnum) {
+    const generatedTeamUuid = uuidv4();
     const ptRepo = AppDataSource.getRepository(PlayerTeam);
+    const playerTeams = await ptRepo.find({
+      where: {
+        uuid: playerTeamUuid,
+        tournament_uuid: tournamentUuid,
+        deletedAt: IsNull()
+      }
+    });
+    const playerTeam = playerTeams.find(pt => pt.uuid = playerTeamUuid)
 
     try {
+
+      // Update status for all players in team      
+      await AppDataSource.transaction(async (tm) => {
+
       // Find all PlayerTeam entries for this team in this tournament
-      const playerTeams = await ptRepo.find({
-        where: {
-          team_uuid: teamUuid,
-          tournament_uuid: tournamentUuid,
-          deletedAt: IsNull()
-        }
-      });
 
       if (playerTeams.length === 0) {
         throw new Error("Team join request not found");
       }
-
-      // Update status for all players in team      
-      await AppDataSource.transaction(async (tm) => {
+        
         const tourneyRepo = tm.getRepository(Tournament);
         const tourney = await tourneyRepo.findOne({
           where: {
@@ -302,7 +306,7 @@ export class TournamentService {
             teamRepo.findOne({
               where: {
                 tournament_uuid: tournamentUuid,
-                uuid: teamUuid,
+                uuid: playerTeam?.team_uuid || generatedTeamUuid,
                 deletedAt: IsNull()
               }
             })
@@ -310,7 +314,7 @@ export class TournamentService {
 
           if (!teamIsExist && !tourney.draft_pick) {
             const team = new Team();
-            team.uuid = teamUuid;
+            team.uuid = playerTeam?.team_uuid || generatedTeamUuid;
             team.tournament_uuid = tournamentUuid;
             
             // Generate unique team name
@@ -349,7 +353,7 @@ export class TournamentService {
         // Update all PlayerTeam entries
         await ptRepo.update(
           {
-            team_uuid: teamUuid,
+            uuid: playerTeamUuid,
             tournament_uuid: tournamentUuid,
             deletedAt: IsNull()
           },
@@ -361,7 +365,8 @@ export class TournamentService {
 
       return {
         message: `Team join request ${status} successfully`,
-        teamUuid,
+        teamUuid:playerTeam?.team_uuid || generatedTeamUuid,
+        playerTeamUuid:playerTeamUuid,
         tournamentUuid,
         status: status,
         affectedPlayers: playerTeams.length
