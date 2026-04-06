@@ -539,16 +539,20 @@ export default class PlayerController {
       const qb = playerRepo.createQueryBuilder("player")
         .leftJoinAndSelect("player.level", "level")
         .where("player.deletedBy IS NULL")
+        .andWhere("player.deletedAt IS NULL")
         .andWhere("player.pinned_at IS NOT NULL")
-        .orderBy("player.pinned_at", "DESC")
-        .addOrderBy("player.createdAt", "ASC");
+        .orderBy("player.createdAt", "DESC")
+        .addOrderBy("player.pinned_at", "DESC")
+        .addOrderBy("player.point", "DESC");
       let [data] = await qb.getManyAndCount();
       if (!data) throw new Error("Data not found");
       if (data?.length == 0) {
         const qb = playerRepo.createQueryBuilder("player")
           .leftJoinAndSelect("player.level", "level")
           .where("player.deletedBy IS NULL")
-          .orderBy("player.point", "DESC")
+          .andWhere("player.deletedAt IS NULL")
+          .orderBy("player.createdAt", "DESC")
+          .addOrderBy("player.point", "DESC")
           .limit(5);
         [data] = await qb.getManyAndCount();
       }
@@ -620,7 +624,7 @@ export default class PlayerController {
 
       if (level) {
         const foundLevel = await levelRepo.findOneBy({
-          name: level || "",
+          name: level.trim() || "",
           deletedBy: IsNull(),
         });
         if (!foundLevel) return res.status(400).json({ message: "Level not found!" });
@@ -630,7 +634,7 @@ export default class PlayerController {
       if (league) {
         const leagueRepo = AppDataSource.getRepository(League);
         const foundLeague = await leagueRepo.findOneBy({
-          name: league || "",
+          name: league.trim() || "",
           deletedBy: IsNull(),
         });
         if (!foundLeague) return res.status(400).json({ message: "League not found!" });

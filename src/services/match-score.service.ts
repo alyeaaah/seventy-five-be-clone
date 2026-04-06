@@ -33,7 +33,8 @@ export class MatchScoreService {
       }
       await AppDataSource.transaction(async (entityManager) => {
         // check Exist
-        const matchesRepo = AppDataSource.getRepository(Matches);
+        const matchesRepo = entityManager.getRepository(Matches);
+        const tourneyRepo = entityManager.getRepository(Tournament);
         const match = await matchesRepo.findOne({
           where: { uuid },
           relations: {
@@ -85,12 +86,18 @@ export class MatchScoreService {
         }
         
         await entityManager.save(match);
+
+        const tourneyInfo = await tourneyRepo.findOne({
+          where: {
+            uuid: match.tournament_uuid,
+            deletedAt: IsNull()
+          }
+        })
         if (match.status == MatchStatus.ENDED && status !== "RESET") {
           // BEGIN: set player point
           let rewardPoint: MatchPoint | undefined = undefined;
-          if (match.tournament_uuid) {
-            const tournamentRepo = AppDataSource.getRepository(Tournament);
-            const point = await tournamentRepo.findOne({
+          if (match.tournament_uuid && tourneyInfo?.type === typeTournamentEnum.KNOCKOUT) {
+            const point = await tourneyRepo.findOne({
               select: ["point_config", "point_config"],
               where: {
                 uuid: match.tournament_uuid, point_config: { points: { round: match.round != null && match.round != undefined ? match.round + 1 : 1 } }
@@ -98,6 +105,22 @@ export class MatchScoreService {
               relations: ["point_config", "point_config.points"]
             });
             rewardPoint = !!point?.point_config?.points?.length ? point.point_config.points[0] : undefined;
+          } else if ((match.tournament_uuid && tourneyInfo?.type === typeTournamentEnum.ROUND_ROBIN)) {
+            let pointRound = 1
+            if (match.round != null && match.round != undefined && match.seed_index != null && match.seed_index != undefined) {
+              pointRound = 1
+            } else {
+              pointRound = match.round != null && match.round != undefined ? match.round + 2 : 1
+            }
+            const point = await tourneyRepo.findOne({
+              select: ["point_config", "point_config"],
+              where: {
+                uuid: match.tournament_uuid, point_config: { points: { round: pointRound } }
+              },
+              relations: ["point_config", "point_config.points"]
+            });
+            rewardPoint = !!point?.point_config?.points?.length ? point.point_config.points[0] : undefined;
+
           } else {
             const pointConfigRepo = AppDataSource.getRepository(PointConfig);
             const point = await pointConfigRepo.findOne({
