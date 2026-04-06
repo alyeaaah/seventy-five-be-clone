@@ -536,9 +536,6 @@ export class TournamentService {
         const desiredGroupName = "Group "+alphabet[currentGroupCount + i];
         
         // Check if there's a soft-deleted group with this name
-        console.log(allGroups);
-        console.log('deleted',deletedGroups,'<deleted');
-        console.log(deletedGroups.find(g => g.group_name === desiredGroupName));
         
         const existingDeletedGroup = deletedGroups.find(g => g.group_name === desiredGroupName);
         

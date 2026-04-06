@@ -1,5 +1,5 @@
 import Util from "../lib/util.lib";
-import { Brackets, In, IsNull } from "typeorm";
+import { Brackets, EntityManager, In, IsNull } from "typeorm";
 
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
@@ -809,7 +809,22 @@ export class MatchService {
       
       const groupedDatas  = groups.map(gd => ({
         ...gd,
-        teams: gd.teams?.sort((a, b) => (a.position || 0) - (b.position || 0)).map(gdt => ({
+        teams: gd.teams?.sort((a, b) => {
+          // Sort by match won (descending)
+          if (b.matches_won !== a.matches_won) {
+            return (b.matches_won || 0) - (a.matches_won || 0);
+          }
+          // Then by point (descending)
+          if (b.point !== a.point) {
+            return (b.point || 0) - (a.point || 0);
+          }
+          // Then by match played (ascending)
+          if (a.matches_played !== b.matches_played) {
+            return (a.matches_played || 0) - (b.matches_played || 0);
+          }
+          // Finally by position (ascending)
+          return (a.position || 0) - (b.position || 0);
+        }).map(gdt => ({
           ...gdt,
           players: gdt.players?.sort((a, b) => {
           // First sort by name
@@ -827,7 +842,22 @@ export class MatchService {
       // Group teams by group_uuid
       const groupedData  = groups.map(gd => groupResponseSchema.parse({
         ...gd,
-        teams: gd.teams?.sort((a, b) => (a.position || 0) - (b.position || 0)).map(gdt => ({
+        teams: gd.teams?.sort((a, b) => {
+          // Sort by match won (descending)
+          if (b.matches_won !== a.matches_won) {
+            return (b.matches_won || 0) - (a.matches_won || 0);
+          }
+          // Then by point (descending)
+          if (b.point !== a.point) {
+            return (b.point || 0) - (a.point || 0);
+          }
+          // Then by match played (ascending)
+          if (a.matches_played !== b.matches_played) {
+            return (a.matches_played || 0) - (b.matches_played || 0);
+          }
+          // Finally by position (ascending)
+          return (a.position || 0) - (b.position || 0);
+        }).map(gdt => ({
           ...gdt,
           players: gdt.players?.sort((a, b) => {
           // First sort by name
@@ -841,7 +871,7 @@ export class MatchService {
           })) || []
         })) || [] 
       }));
-      
+      // add finale sorting here
       utilLib.loggingRes(req, { data: groupedDatas, message: "Tournament groups fetched successfully" });
       return res.json({ data: groupedData, message: "Tournament groups fetched successfully" });
     } catch (error: any) {
@@ -849,7 +879,5 @@ export class MatchService {
       utilLib.loggingError(req, error.message);
       return res.status(400).json({ message: error.message });
     } 
-  } 
+  }
 }
-
-

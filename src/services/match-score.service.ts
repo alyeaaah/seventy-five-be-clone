@@ -1,6 +1,6 @@
 import Util from "../lib/util.lib";
 import { v4 as uuidv4 } from "uuid";
-import { IsNull } from "typeorm";
+import { EntityManager, In, IsNull } from "typeorm";
 
 import { AppDataSource } from "../data-source";
 import { Tournament, typeTournamentEnum } from "../entities/Tournament";
@@ -20,6 +20,7 @@ import { PlayerTeam } from "../entities/PlayerTeam";
 import { Titles } from "../entities/Titles";
 import { PlayerTitles } from "../entities/PlayerTitles";
 import webSocketService from "../websocket";
+import { TournamentGroup } from "../entities/TournamentGroups";
 
 export class MatchScoreService {
   async updateScore(req: any, res: any) {
@@ -62,8 +63,8 @@ export class MatchScoreService {
               }
             }
           };
-          
-          return res.status(206).json(responses);
+          return responses
+          // return res.status(206).json(responses);
         }
         match.home_team_score = home_team_score;
         match.away_team_score = away_team_score;
@@ -76,6 +77,7 @@ export class MatchScoreService {
           match.status = MatchStatus.ENDED;
         }
         if (status === "RESET") {
+          
           match.home_team_score = 0;
           match.away_team_score = 0;
           match.winner_team_uuid = '';
@@ -240,11 +242,6 @@ export class MatchScoreService {
           ]); 
         }
 
-        if (match.status == MatchStatus.ENDED && status !== "RESET" && (match.round || -1) > -1) { 
-          // BEGIN: update next round
-          await this.updateNextRound(req, res, true);
-          // END: update next round
-        }
         const responses = {
           message: "Match updated successfully!",
           data: { ...match,
@@ -258,11 +255,24 @@ export class MatchScoreService {
             }
           }
         };
+        await this.getAllOngoingMatchScoresEM(entityManager);
+        return responses;
         utilLib.loggingRes(req, responses);
         return res.json(responses);
-      }).then(async () => {
+      }).then(async (d) => {
+
+        if (d?.data?.status == MatchStatus.ENDED && status !== "RESET" && (d?.data?.round || -1) > -1) { 
+          // BEGIN: update next round
+          this.updateNextRound(req, res, true);
+          // END: update next round
+        }
         // Trigger WebSocket broadcast by calling getAllOngoingMatchScores
-        await this.getAllOngoingMatchScores();
+
+        utilLib.loggingRes(req, d);
+        
+        // await this.getAllOngoingMatchScores();
+        return res.status(200).json(d);
+
       });
     } catch (error: any) {
       utilLib.loggingError(req, error.message);
@@ -281,7 +291,7 @@ export class MatchScoreService {
         // check Exist
         const matchesRepo = AppDataSource.getRepository(Matches);
         const match = await matchesRepo.findOne({
-          where: { uuid: matchUUID },
+          where: { uuid: matchUUID, deletedAt: IsNull() },
           relations: {
             home_team: {
               players: true
@@ -304,8 +314,9 @@ export class MatchScoreService {
               deletedAt: IsNull()
             }
           });
-
-          if (tournament?.type === typeTournamentEnum.KNOCKOUT && (match.round || -1) > -1) {
+          const isKnockout = tournament?.type === typeTournamentEnum.KNOCKOUT && ((match.round || 0) > -1);
+          const isRoundRobinKnockoutMatch = tournament?.type === typeTournamentEnum.ROUND_ROBIN && ((match.round || 0) > -1 && (match.seed_index || 0) < 0);
+          if (isKnockout || isRoundRobinKnockoutMatch) {
             // BEGIN: update next round
             // check if this match is a knockout tournament match
             const nextSeed = utilLib.getNextSeed({
@@ -472,9 +483,19 @@ export class MatchScoreService {
               await entityManager.save(allPlayerTitles);
             }
           }
-            // END: update next match
+          
+          if (tournament?.type === typeTournamentEnum.ROUND_ROBIN && (match.round || 0) < 0) {
+            await this.calculateGroupResult({ group_uuid: match.group_uuid || '', em: entityManager })
+            await this.assignGroupWinnerToKnockout({ group_uuid: match.group_uuid || "", em: entityManager });
+          }
+          
         }
         if (isVoid === true) return;
+        return match
+      }).then((match) => {
+        if (match?.tournament && (match.tournament.type === typeTournamentEnum.ROUND_ROBIN) && (match.round || 0) < 0) { 
+          // this.calculateGroupResult({ group_uuid: match?.group_uuid || '' })
+        }
         utilLib.loggingRes(req, { match, message: "Match updated successfully!" });
         return res.json({ match, message: "Match updated successfully!" });
       }).catch((error) => {
@@ -816,6 +837,252 @@ export class MatchScoreService {
       return matchScores;
     } catch (error: any) {
       console.error('Error fetching ongoing match scores:', error);
+      throw error;
+    }
+  }
+  async getAllOngoingMatchScoresEM(em:EntityManager): Promise<any[]> {
+    try {
+      const matchesRepo = em.getRepository(Matches);
+      
+      // Fetch all matches with ONGOING status
+      const ongoingMatches = await matchesRepo.find({
+        where: {
+          status: MatchStatus.ONGOING
+        },
+        relations: ["home_team", "away_team"],
+        select: ["uuid", "home_team_uuid", "away_team_uuid", "status", "game_scores", "round"]
+      });
+
+      if (!ongoingMatches.length) {
+        return [];
+      }
+
+      // Fetch game scores for all ongoing matches
+      const matchScores = await Promise.all(
+        ongoingMatches.map(async (match) => {
+
+          return {
+            matchUuid: match.uuid,
+            homeTeamUuid: match.home_team_uuid,
+            awayTeamUuid: match.away_team_uuid,
+            status: match.status,
+            round: match.round,
+            game_scores: match.game_scores
+          };
+        })
+      );
+
+      // Broadcast to WebSocket clients
+      try {
+        const matchScoreData = matchScores.map(match => ({
+          matchUuid: match.matchUuid,
+          score: match.game_scores?.map((game: any) => ({
+            set: game.set,
+            game: game.game,
+            game_score_home: game.game_score_home,
+            game_score_away: game.game_score_away,
+            status: game.status,
+            last_updated_at: game.last_updated_at
+          }))
+        }));
+        webSocketService.broadcastMatchScores(matchScoreData);
+        console.log('WebSocket broadcast triggered from getAllOngoingMatchScores');
+      } catch (wsError) {
+        console.error('Failed to broadcast WebSocket update:', wsError);
+        // Don't fail the method if WebSocket broadcast fails
+      }
+
+      return matchScores;
+    } catch (error: any) {
+      console.error('Error fetching ongoing match scores:', error);
+      throw error;
+    }
+  }
+  private async calculateGroupResult({ em, group_uuid }: { em?: EntityManager, group_uuid: string }) {
+    const entitymanager = em || AppDataSource.createEntityManager();
+    
+    try {
+      // Get teams by group uuid
+      const teams = await entitymanager.find(Team, {
+        where: { 
+          group_uuid,
+          deletedAt: IsNull()
+        }
+      });
+
+      // Loop teams as team started
+      for (const team of teams) {
+        // Declare stats
+        let stats = {
+          matches: 0,
+          wins: 0,
+          points: 0
+        };
+
+        // Find ended matches by team (only matches in same group)
+        const endedMatches = await entitymanager.find(Matches, {
+          where: [
+            { 
+              home_team_uuid: team.uuid, 
+              status: MatchStatus.ENDED,
+              group_uuid: group_uuid,
+              deletedAt: IsNull()
+            },
+            { 
+              away_team_uuid: team.uuid, 
+              status: MatchStatus.ENDED,
+              group_uuid: group_uuid,
+              deletedAt: IsNull()
+            }
+          ]
+        });
+
+        // Loop ended matches
+        for (const endedMatch of endedMatches) {
+          stats.matches++;
+
+          // Calculate score difference
+          const scoreDiff = endedMatch.home_team_score - endedMatch.away_team_score;
+
+          // Check if team is home team
+          if (endedMatch.home_team_uuid === team.uuid) {
+            if (endedMatch.home_team_score > endedMatch.away_team_score) {
+              // Home team won
+              stats.wins++;
+              stats.points += scoreDiff;
+            } else if (endedMatch.home_team_score === endedMatch.away_team_score) {
+              // Draw (count as win for simplicity, but no points)
+              stats.wins++;
+              stats.points += 0;
+            } else {
+              // Home team lost - add negative points
+              stats.points += scoreDiff; // scoreDiff will be negative
+            }
+          } 
+          // Check if team is away team
+          else if (endedMatch.away_team_uuid === team.uuid) {
+            if (endedMatch.away_team_score > endedMatch.home_team_score) {
+              // Away team won
+              stats.wins++;
+              stats.points += Math.abs(scoreDiff);
+            } else if (endedMatch.home_team_score === endedMatch.away_team_score) {
+              // Draw (count as win for simplicity, but no points)
+              stats.wins++;
+              stats.points += 0;
+            } else {
+              // Away team lost - add negative points
+              stats.points += Math.abs(scoreDiff) * -1; // make it negative
+            }
+          }
+        }
+
+        // Set team stats
+        team.matches_won = stats.wins;
+        team.matches_played = stats.matches;
+        team.point = stats.points;
+
+        // Save team to entity
+        await entitymanager.save(Team, team);
+      }
+
+    } catch (error) {
+      console.error('Error calculating group result:', error);
+      throw error;
+    }
+  }
+
+  private async assignGroupWinnerToKnockout({ em, group_uuid }: { em?: EntityManager, group_uuid: string }) {
+    const entitymanager = em || AppDataSource.createEntityManager();
+    
+    try {
+      // Make sure all matches in group has been ended
+      const unfinishedMatches = await entitymanager.find(Matches, {
+        where: [
+          { 
+            group_uuid: group_uuid, 
+            status: In([MatchStatus.UPCOMING, MatchStatus.ONGOING, MatchStatus.PAUSED]),
+            deletedAt: IsNull()
+          }
+        ]
+      });
+
+      // If has 1 matches not ended, just return nothing
+      if (unfinishedMatches.length > 0) {
+        return;
+      }
+
+      // Get tournament total group qualifier in tournament entity
+      const group = await entitymanager.findOne(TournamentGroup, {
+        where: { 
+          group_uuid,
+          deletedAt: IsNull()
+        },
+        relations: ['tournament']
+      });
+
+      if (!group || !group.tournament) {
+        throw new Error('Group or tournament not found');
+      }
+
+      const totalQualifier = group.tournament.group_qualifier;
+
+      // Get group teams
+      const teams = await entitymanager.find(Team, {
+        where: { 
+          group_uuid,
+          deletedAt: IsNull()
+        },
+        order: {
+          matches_won: 'DESC',
+          point: 'DESC',
+          matches_played: 'ASC'
+        }
+      });
+
+      // Take top N teams (where N = total group qualifier)
+      const qualifiedTeams = teams.slice(0, totalQualifier);
+
+      // Loop top N teams
+      for (let i = 0; i < qualifiedTeams.length; i++) {
+        const team = qualifiedTeams[i];
+        const position = i + 1;
+
+        // MatchHomeFound = find matches where matches.group_uuid = group_uuid and matches.home_team_position is N
+        const matchHomeFound = await entitymanager.findOne(Matches, {
+          where: {
+            home_group_uuid: group_uuid,
+            home_group_position: position,
+            deletedAt: IsNull()
+          }
+        });
+
+        if (matchHomeFound) {
+          // Update match.home_team_uuid with team.uuid
+          matchHomeFound.home_team_uuid = team.uuid;
+          matchHomeFound.home_group_uuid = group_uuid;
+          await entitymanager.save(Matches, matchHomeFound);
+          
+        } else {
+          // MatchAwayFound = find matches where matches.group_uuid = group_uuid and matches.away_team_position is N
+          const matchAwayFound = await entitymanager.findOne(Matches, {
+            where: {
+              away_group_uuid: group_uuid,
+              away_group_position: position,
+              deletedAt: IsNull()
+            }
+          });
+
+          if (matchAwayFound) {
+            // Update match.away_team_uuid with team.uuid
+            matchAwayFound.away_team_uuid = team.uuid;
+            matchAwayFound.away_group_uuid = group_uuid;
+            await entitymanager.save(Matches, matchAwayFound);
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Error assigning group winners to knockout:', error);
       throw error;
     }
   }

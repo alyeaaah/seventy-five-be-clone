@@ -296,7 +296,6 @@ export default class PlayerController {
         turnDate: formatDate(data.turnDate),
         level: data.level ? data.level.name : undefined,
       };
-      console.log("publiccccc\n\n\n--------\n\n00");
       
       utilLib.loggingRes(req, { data: result });
       return res.json({ data: result });
