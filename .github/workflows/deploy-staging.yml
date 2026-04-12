@@ -85,6 +85,12 @@ jobs:
         run: |
           ssh -v -i key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy-sf@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
 
+      - name: Debug - Echo server destination
+        run: |
+          echo "SERVER_DEST: ${{ vars.SERVER_DEST }}"
+          echo "SERVER_USER: ${{ secrets.SERVER_USER }}"
+          echo "SERVER_HOST: ${{ secrets.SERVER_HOST }}"
+
       - name: Deploy via rsync over SSH
         run: |
           rsync -avz --exclude=node_modules --exclude='*/node_modules/*' -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
