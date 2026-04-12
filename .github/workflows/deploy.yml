@@ -68,6 +68,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Build project
         run: npm run build
@@ -91,6 +92,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Prepare SSH key
         run: |
