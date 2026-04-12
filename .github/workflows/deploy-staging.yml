@@ -80,12 +80,12 @@ jobs:
 
       - name: Test SSH Connection
         run: |
-          ssh -v -i key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "echo 'SSH connection successful'"
+          ssh -v -i key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null deploy-sf@${{ secrets.SERVER_HOST }} "echo 'SSH connection successful'"
 
       - name: Deploy via rsync over SSH
         run: |
           rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
-            ./dist/ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.SERVER_DEST }}
+            ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DEST }}
 
       - name: Restart PM2 App
         run: |
