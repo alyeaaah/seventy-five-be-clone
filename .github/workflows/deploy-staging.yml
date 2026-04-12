@@ -73,10 +73,10 @@ jobs:
 
       - name: Prepare SSH key
         run: |
-          printf "%s" "$PRIVATE_KEY" > key.pem
+          echo "$SSH_PRIVATE_KEY" > key.pem
           chmod 600 key.pem
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Test SSH Connection
         run: |
@@ -85,12 +85,12 @@ jobs:
       - name: Deploy via rsync over SSH
         run: |
           rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
-            ./dist/ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.SERVER_DEST_STAGING }}
+            ./dist/ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.SERVER_DEST }}
 
       - name: Restart PM2 App
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} \
-            "cd ${{ vars.SERVER_DEST_STAGING }} && pm2 restart backend-sf"
+            "cd ${{ vars.SERVER_DEST }} && pm2 restart backend-sf"
 
       - name: Cleanup
         run: rm -f key.pem
