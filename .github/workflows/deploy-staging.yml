@@ -47,6 +47,9 @@ jobs:
           SECRET_KEY=${{ secrets.SECRET_KEY }}
           EOF
 
+      - name: Clean previous build
+        run: rm -rf dist
+
       - name: Build project
         run: npm run build
         env:
@@ -84,7 +87,7 @@ jobs:
 
       - name: Deploy via rsync over SSH
         run: |
-          rsync -avz --exclude=node_modules -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+          rsync -avz --exclude=node_modules --exclude='*/node_modules/*' -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
             ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ vars.SERVER_DEST }}
 
       - name: Restart PM2 App
