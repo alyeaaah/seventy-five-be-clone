@@ -88,6 +88,9 @@ jobs:
       - name: Debug - Echo server destination
         run: |
           echo "SERVER_DEST: ${{ vars.SERVER_DEST }}"
+          echo "DBUSER: ${{ vars.DBUSER }}"
+          echo "secrets DBUSER: ${{ secrets.DBUSER }}"
+          echo "secrets SERVER_DEST: ${{ secrets.SERVER_DEST }}"
           echo "SERVER_USER: ${{ secrets.SERVER_USER }}"
           echo "SERVER_HOST: ${{ secrets.SERVER_HOST }}"
 
