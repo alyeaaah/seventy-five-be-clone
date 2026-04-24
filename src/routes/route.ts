@@ -171,6 +171,8 @@ export const route = (router: Router) => {
   router.put("/api/match/status/:uuid", logMiddleware, authMiddleware, matchCon.updateMatchStatus);
   router.put("/api/match/video-url/:uuid", logMiddleware, authMiddleware, matchCon.updateVideoURL);
   router.delete("/api/match/:uuid", logMiddleware, authMiddleware, matchCon.delete);
+  router.post("/api/match/assign-referee/:uuid", logMiddleware, authMiddleware, matchCon.addReferee);
+  router.get("/api/match/referee/", logMiddleware, authMiddleware, matchCon.fetchReferees);
   // router.put("/api/match/end/:uuid", logMiddleware, authMiddleware, matchCon.endMatch); // unused
   // router.put("/api/set/scoreupdate/:uuid", logMiddleware, authMiddleware, matchCon.updateSetScore);  // unused
   // router.put("/api/set/end/:uuid", logMiddleware, authMiddleware, matchCon.endSet);  // unused

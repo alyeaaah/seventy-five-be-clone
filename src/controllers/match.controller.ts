@@ -1,12 +1,20 @@
-import { MatchStatus } from "../entities/Matches";
+import { MatchStatus, Matches } from "../entities/Matches";
+import { MatchReferee } from "../entities/MatchReferee";
+import { MatchRefereeStatus } from "../entities/MatchReferee";
+import { Player } from "../entities/Player";
 import { MatchAdministratorService } from "../services/match-administrator.service";
 import { MatchScoreService } from "../services/match-score.service";
 import { MatchService } from "../services/match.service";
+import { AppDataSource } from "../data-source";
+import { IsNull } from "typeorm";
 
 export default class MatchController {
   private readonly matchAdministratorService: MatchAdministratorService;
   private readonly matchScoreService: MatchScoreService;
   private readonly matchService: MatchService;
+  private readonly matchRefereeRepository = AppDataSource.getRepository(MatchReferee);
+  private readonly playerRepository = AppDataSource.getRepository(Player);
+  private readonly matchRepository = AppDataSource.getRepository(Matches);
 
   constructor() {
     this.matchAdministratorService = new MatchAdministratorService();
@@ -18,6 +26,8 @@ export default class MatchController {
     this.createMultiple = this.createMultiple.bind(this);
     this.updateMultiple = this.updateMultiple.bind(this);
     this.createMultipleCustom = this.createMultipleCustom.bind(this);
+    this.addReferee = this.addReferee.bind(this);
+    this.fetchReferees = this.fetchReferees.bind(this);
     this.updateCustom = this.updateCustom.bind(this);
     this.list = this.list.bind(this);
     this.detail = this.detail.bind(this);
@@ -128,5 +138,121 @@ export default class MatchController {
   }
   async publicTournamentGroup(req: any, res: any) {
     return this.matchService.publicTournamentGroup(req, res);
+  }
+
+  async addReferee(req: any, res: any) {
+    try {
+      const { uuid } = req.params;
+      const { referee_uuid, status } = req.body;
+
+      // Validate required fields
+      if (!referee_uuid || !status) {
+        return res.status(400).json({
+          success: false,
+          message: 'referee_uuid and status are required',
+        });
+      }
+
+      // Validate status enum
+      if (!Object.values(MatchRefereeStatus).includes(status as MatchRefereeStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status. Must be one of: ${Object.values(MatchRefereeStatus).join(', ')}`,
+        });
+      }
+
+      // Check if match exists
+      const match = await this.matchRepository.findOne({
+        where: { uuid, deletedAt: IsNull() }
+      });
+      if (!match) {
+        return res.status(404).json({
+          success: false,
+          message: 'Match not found',
+        });
+      }
+
+      // Check if player exists
+      const player = await this.playerRepository.findOne({
+        where: { uuid: referee_uuid },
+      });
+
+      if (!player) {
+        return res.status(404).json({
+          success: false,
+          message: 'Player not found',
+        });
+      }
+
+      // Check if referee assignment already exists
+      const existingAssignment = await this.matchRefereeRepository.findOne({
+        where: {
+          match_uuid: uuid,
+          player_uuid: referee_uuid,
+        },
+      });
+
+      if (existingAssignment) {
+        return res.status(409).json({
+          success: false,
+          message: 'Player is already assigned as referee for this match',
+        });
+      }
+
+      // Create new match referee assignment
+      const matchReferee = this.matchRefereeRepository.create({
+        match_uuid: uuid,
+        player_uuid: referee_uuid,
+        status: status as MatchRefereeStatus,
+        createdBy: req.user?.uuid || null,
+      });
+
+      const savedMatchReferee = await this.matchRefereeRepository.save(matchReferee);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Referee assigned successfully',
+        data: savedMatchReferee,
+      });
+    } catch (error) {
+      console.error('Error assigning referee:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+
+  async fetchReferees(req: any, res: any) {
+    try {
+      const { match_uuid, player_uuid } = req.query;
+
+      // Validate that at least one parameter is provided
+      if (!match_uuid && !player_uuid) {
+        return res.status(400).json({
+          success: false,
+          message: 'Either match_uuid or player_uuid query parameter is required',
+        });
+      }
+
+      const data = await this.matchService.fetchReferees(
+        match_uuid as string,
+        player_uuid as string
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: 'Referees fetched successfully',
+        data,
+      });
+    } catch (error) {
+      console.error('Error fetching referees:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 }

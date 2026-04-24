@@ -11,6 +11,7 @@ import { PlayerReview } from "./PlayerReview";
 import { League } from "./League";
 import { PlayerTitles } from "./PlayerTitles";
 import { DraftPick } from "./DraftPick";
+import { MatchReferee } from "./MatchReferee";
 
 export enum GenderEnum {
   male = "m",
@@ -195,5 +196,8 @@ export class Player {
 
   @OneToMany(() => DraftPick, (draftPick) => draftPick.player)
   draftPicks: DraftPick[] | undefined;
-  
+
+  @OneToMany(() => MatchReferee, (matchReferee) => matchReferee.player)
+  matchRefereeAssignments: MatchReferee[] | undefined;
+    
 }

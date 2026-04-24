@@ -7,8 +7,10 @@ import { Matches, MatchStatus } from "../entities/Matches";
 import { Team } from "../entities/Team";
 import { TournamentGroup } from "../entities/TournamentGroups";
 import { Player } from "../entities/Player";
+import { MatchReferee } from "../entities/MatchReferee";
 import { playerDummy } from "../lib/fake.lib";
 import { groupResponseSchema, matchSchema } from "../schemas/tournament.schema";
+import { playerSchema } from "../schemas/player.schema";
 
 export class MatchService {
   async list(req: any, res: any) {
@@ -879,5 +881,52 @@ export class MatchService {
       utilLib.loggingError(req, error.message);
       return res.status(400).json({ message: error.message });
     } 
+  }
+
+  async fetchReferees(match_uuid?: string, player_uuid?: string) {
+    try {
+      const matchRefereeRepository = AppDataSource.getRepository(MatchReferee);
+
+      let query = matchRefereeRepository.createQueryBuilder('matchReferee')
+        .leftJoinAndSelect('matchReferee.match', 'match')
+        .leftJoinAndSelect('matchReferee.player', 'player')
+        .leftJoinAndSelect('match.home_team', 'homeTeam')
+        .leftJoinAndSelect('match.away_team', 'awayTeam')
+        .leftJoinAndSelect('homeTeam.players', 'homeTeamPlayers')
+        .leftJoinAndSelect('awayTeam.players', 'awayTeamPlayers')
+        .leftJoinAndSelect('homeTeamPlayers.player', 'homeTeamPlayer')
+        .leftJoinAndSelect('awayTeamPlayers.player', 'awayTeamPlayer');
+
+      if (match_uuid) {
+        
+        query = query.where('matchReferee.match_uuid = :match_uuid', { match_uuid });
+      }
+
+      if (player_uuid) {
+        query = query.andWhere('matchReferee.player_uuid = :player_uuid', { player_uuid });
+      }
+
+      const matchReferees = await query.getMany();
+
+      // Transform data using existing schemas
+      return matchReferees.map(referee => ({
+        id: referee.id,
+        match_uuid: referee.match_uuid,
+        player_uuid: referee.player_uuid,
+        status: referee.status,
+        createdBy: referee.createdBy,
+        deletedBy: referee.deletedBy,
+        deletedAt: referee.deletedAt,
+        createdAt: referee.createdAt,
+        updatedAt: referee.updatedAt,
+        // Use existing match schema for match data
+        match: referee.match ? matchSchema.parse(referee.match) : null,
+        // Use existing player schema for player data
+        player: referee.player ? playerSchema.parse(referee.player) : null,
+      }));
+    } catch (error) {
+      console.error('Error fetching referees:', error);
+      throw error;
+    }
   }
 }

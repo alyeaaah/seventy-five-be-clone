@@ -18,6 +18,7 @@ import { MatchHistories } from "./MatchHistories";
 import { BlogContent } from "./BlogContents";
 import { PlayerKudos } from "./PlayerKudos";
 import { TournamentGroup } from "./TournamentGroups";
+import { MatchReferee } from "./MatchReferee";
 
 export enum MatchStatus {
   UPCOMING = "UPCOMING",
@@ -190,4 +191,7 @@ export class Matches {
 
   @OneToMany(() => PlayerKudos, (playerKudos) => playerKudos.matches)
   player_kudos: PlayerKudos[] | undefined;
-}
+
+  @OneToMany(() => MatchReferee, (matchReferee) => matchReferee.match)
+  match_referees: MatchReferee[] | undefined;
+  }
