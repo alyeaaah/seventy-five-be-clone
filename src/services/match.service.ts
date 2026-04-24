@@ -83,7 +83,7 @@ export class MatchService {
             alias: isHome ? match.home_team?.alias : match.home_team_uuid,
             players: isHome ? [...match.home_team.players].sort((a, b) => {
               if (a.captain === b.captain) return 0;
-              return a.captain ? 1 : -1; // false (non-captain) comes first, true (captain) comes last
+              return a.captain ? -1 : 1; // true (captain) comes first, false (non-captain) comes last
             }).map((player: any) => ({
               id: player.player?.id,
               uuid: player.player?.uuid,
@@ -502,7 +502,7 @@ export class MatchService {
             alias: isAway ? match.away_team.alias : match.away_team_uuid,
             players: isAway ? [...match.away_team.players].sort((a, b) => {
               if (a.captain === b.captain) return 0;
-              return a.captain ? 1 : -1; // false (non-captain) comes first, true (captain) comes last
+              return a.captain ? -1 : 1; // true (captain) comes first, false (non-captain) comes last
             }).map((player: any) => ({
               id: player.player?.id,
               uuid: player.player?.uuid,
@@ -712,7 +712,7 @@ export class MatchService {
             alias: isHome ? match.home_team.alias : match.home_team_uuid,
             players: isHome ? [...match.home_team.players].sort((a, b) => {
               if (a.captain === b.captain) return 0;
-              return a.captain ? 1 : -1; // false (non-captain) comes first, true (captain) comes last
+              return a.captain ? -1 : 1; // true (captain) comes first, false (non-captain) comes last
             }).map((player: any) => ({
               id: player.player?.id,
               uuid: player.player?.uuid,
@@ -738,7 +738,7 @@ export class MatchService {
             alias: isAway ? match.away_team.alias : match.away_team_uuid,
             players: isAway ? [...match.away_team.players].sort((a, b) => {
               if (a.captain === b.captain) return 0;
-              return a.captain ? 1 : -1; // false (non-captain) comes first, true (captain) comes last
+              return a.captain ? -1 : 1; // true (captain) comes first, false (non-captain) comes last
             }).map((player: any) => ({
               id: player.player?.id,
               uuid: player.player?.uuid,
