@@ -918,6 +918,7 @@ export class MatchService {
 
       if (player_uuid) {
         query = query.andWhere('matchReferee.player_uuid = :player_uuid', { player_uuid });
+        query.andWhere('match.status != :status', { status: MatchStatus.ENDED });
       }
 
       const matchReferees = await query.getMany();
