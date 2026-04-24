@@ -829,14 +829,15 @@ export class MatchService {
         }).map(gdt => ({
           ...gdt,
           players: gdt.players?.sort((a, b) => {
-          // First sort by name
-          const nameComparison = (a.player?.name || '').localeCompare(b.player?.name || '');
-          if (nameComparison !== 0) return nameComparison;
-          
-          // If names are the same, sort by captain (captain first)
-          return (b.captain ? 1 : 0) - (a.captain ? 1 : 0);
+          // First sort by captain (captain first)
+          if (a.captain !== b.captain) {
+            return (b.captain ? 1 : 0) - (a.captain ? 1 : 0);
+          }
+          // Then sort by name
+          return (a.player?.name || '').localeCompare(b.player?.name || '');
         }).map(gdp => ({
             ...gdp.player,
+            is_captain: gdp.captain
           })) || []
         })) || [] 
       }));
@@ -862,14 +863,15 @@ export class MatchService {
         }).map(gdt => ({
           ...gdt,
           players: gdt.players?.sort((a, b) => {
-          // First sort by name
-          const nameComparison = (a.player?.name || '').localeCompare(b.player?.name || '');
-          if (nameComparison !== 0) return nameComparison;
-          
-          // If names are the same, sort by captain (captain first)
-          return (b.captain ? 1 : 0) - (a.captain ? 1 : 0);
+          // First sort by captain (captain first)
+          if (a.captain !== b.captain) {
+            return (b.captain ? 1 : 0) - (a.captain ? 1 : 0);
+          }
+          // Then sort by name
+          return (a.player?.name || '').localeCompare(b.player?.name || '');
         }).map(gdp => ({
             ...gdp.player,
+            is_captain: gdp.captain
           })) || []
         })) || [] 
       }));
