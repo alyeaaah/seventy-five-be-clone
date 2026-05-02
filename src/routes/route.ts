@@ -323,6 +323,7 @@ export const route = (router: Router) => {
 
   // Tournament
   router.get("/api/public/tournament/featured", logMiddleware, tourCon.featured);
+  router.get("/api/public/tournament/recent", logMiddleware, tourCon.recent);
   router.get("/api/public/tournament/:tournament_uuid/matches", logMiddleware, matchCon.publicTournamentMatchList);
   router.get("/api/public/tournament/:tournament_uuid/sponsors", logMiddleware, tourCon.listSponsors);
   router.get("/api/public/tournament/:uuid", logMiddleware, tourCon.publicDetail);

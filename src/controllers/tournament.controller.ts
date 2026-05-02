@@ -543,6 +543,44 @@ export default class TournamentController {
     }
   }
 
+  async recent(req: any, res: any) {
+    const utilLib = Util.getInstance();
+    const {limit} = req.query;
+    try {
+      const tRepo = AppDataSource.getRepository(Tournament);
+      const queryBuilder = tRepo.createQueryBuilder("tournament");
+
+      queryBuilder.leftJoinAndSelect("tournament.rules", "rules")
+        .leftJoinAndSelect("tournament.court", "court")
+        .leftJoinAndSelect("tournament.level", "level")
+      
+      // Get tournaments that ended before today
+      queryBuilder.where("tournament.published_at IS NOT NULL");
+      queryBuilder.andWhere("tournament.end_date < :date", { date: new Date() });
+      queryBuilder.andWhere("tournament.deletedAt IS NULL");
+      queryBuilder.orderBy("tournament.end_date", "DESC");
+      
+      if (limit) {
+        queryBuilder.limit(limit);
+      }
+      console.log('\n\n',queryBuilder.getQueryAndParameters(),'\n');
+      
+      const data = await queryBuilder.getMany();
+
+      const result = data.map((d) => ({
+        ...d,
+        court: d.court?.name,
+        level: d.level?.name,
+      }));
+      
+      utilLib.loggingRes(req, { data: result, message: "Recent tournaments fetched successfully" });
+      return res.json({ data: result, message: "Recent tournaments fetched successfully" });
+    } catch (error: any) {
+      utilLib.loggingError(req, error.message);
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
   // Player joins tournament
   joinTournament = async (req: any, res: any) => {
     const utilLib = Util.getInstance();

@@ -338,7 +338,7 @@ export class MatchScoreService {
             }
           });
           const isKnockout = tournament?.type === typeTournamentEnum.KNOCKOUT && ((match.round || 0) > -1);
-          const isRoundRobinKnockoutMatch = tournament?.type === typeTournamentEnum.ROUND_ROBIN && ((match.round || 0) > -1 && (match.seed_index || 0) < 0);
+          const isRoundRobinKnockoutMatch = tournament?.type === typeTournamentEnum.ROUND_ROBIN && ((match.round || 0) > -1);
           if (isKnockout || isRoundRobinKnockoutMatch) {
             // BEGIN: update next round
             // check if this match is a knockout tournament match
