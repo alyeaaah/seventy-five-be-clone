@@ -41,7 +41,8 @@ export default class PlayerBasedController {
           sponsors:true,
           playerTeams: {
             player:true
-          }
+          },
+          draft_picks:true
         },
         order: {
           createdAt: "DESC"
@@ -60,10 +61,10 @@ export default class PlayerBasedController {
       let resultTournaments = tournamentsData;
       if (player_uuid) {
         resultTournaments = tournamentsData.map(tournament => {
-          const playerTeam = tournament.playerTeams?.find(pt => pt.player_uuid === player_uuid);
+          const draftPick = tournament.draft_picks?.find(dp => dp.player_uuid === player_uuid || dp.drafted_by === player_uuid);
           return {
             ...tournament,
-            join_status: playerTeam ? playerTeam.status : null
+            join_status: draftPick ? draftPick.status : null
           };
         });
       }
@@ -114,7 +115,8 @@ export default class PlayerBasedController {
           league: true,
           point_config: true,
           sponsors:true,
-          playerTeams:true
+          playerTeams: true,
+          draft_picks: true
         },
         order: {
           createdAt: "DESC"
@@ -133,10 +135,10 @@ export default class PlayerBasedController {
       let resultTournaments = tournamentsData;
       if (player_uuid) {
         resultTournaments = tournamentsData.map(tournament => {
-          const playerTeam = tournament.playerTeams?.find(pt => pt.player_uuid === player_uuid);
+          const draftPick = tournament.draft_picks?.find(dp => dp.tournament_uuid === tournament.uuid && (dp.player_uuid === player_uuid || dp.drafted_by === player_uuid ));
           return {
             ...tournament,
-            join_status: playerTeam ? playerTeam.status : null
+            join_status: draftPick ? draftPick.status : null
           };
         });
       }

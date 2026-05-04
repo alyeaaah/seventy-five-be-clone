@@ -28,6 +28,9 @@ import { TournamentGroup } from "./TournamentGroups";
   
     @Column()
     tournament_uuid: string = "";
+
+    @Column({ type: "varchar", nullable: true })
+    tournament_event_uuid: string | undefined;
   
     @Column()
     name: string = "";

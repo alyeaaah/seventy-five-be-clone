@@ -9,6 +9,7 @@ import { Matches } from "../entities/Matches";
 import { TournamentSponsors } from "../entities/TournamentSponsors";
 import { TournamentGroup } from "../entities/TournamentGroups";
 import { TournamentService } from "../services/tournament.service";
+import { DraftPick } from "../entities/DraftPick";
 
 export default class TournamentController {
   constructor() {
@@ -91,6 +92,7 @@ export default class TournamentController {
         .andWhere("rules.deletedBy IS NULL")
         .andWhere("court.deletedBy IS NULL")
         .andWhere("level.deletedBy IS NULL")
+        .andWhere("tournament.tournament_event_uuid IS NULL")
       if (type) {
         if (type.includes(",")) {
           queryBuilder.andWhere("tournament.type IN (:...types)", { types: type.split(",").map((t: string) => t.trim()) });
@@ -98,6 +100,7 @@ export default class TournamentController {
           queryBuilder.andWhere("tournament.type = :type", { type });
         }
       }
+      queryBuilder.addOrderBy("tournament.createdAt", "DESC");
       queryBuilder
         .skip(offset)
         .take(limit);
@@ -435,19 +438,19 @@ export default class TournamentController {
     const playerUuid = req.data?.uuid || req.user?.uuid;
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
-      const ptRepo = AppDataSource.getRepository(PlayerTeam);
+      const dpRepo = AppDataSource.getRepository(DraftPick);
       
       // Check if player has joined this tournament
       let playerJoinStatus = null;
       if (playerUuid) {
-        const playerTeam = await ptRepo.findOne({
+        const draftPick = await dpRepo.findOne({
           where: {
             player_uuid: playerUuid,
             tournament_uuid: uuid,
             deletedAt: IsNull()
           }
         });
-        playerJoinStatus = playerTeam?.status || null;
+        playerJoinStatus = draftPick?.status || null;
       }
       
       const data = await tRepo.findOne({
@@ -496,6 +499,7 @@ export default class TournamentController {
         .leftJoinAndSelect("tournament.level", "level")
       
       queryBuilder.where("(tournament.featured_at IS NOT NULL");
+      queryBuilder.andWhere("tournament.tournament_event_uuid IS NULL");
       queryBuilder.andWhere("tournament.published_at IS NOT NULL");
       queryBuilder.andWhere("tournament.featured_at >= :date", { date: new Date(new Date().setMonth(new Date().getMonth() - 2)) });
       queryBuilder.andWhere("tournament.end_date >= :date", { date: new Date(new Date().setDate(new Date().getDay() - 1)) });
@@ -506,6 +510,7 @@ export default class TournamentController {
       if (limit && count < limit) {
         queryBuilder.orWhere("(tournament.featured_at IS NOT NULL");
         queryBuilder.andWhere("tournament.published_at IS NOT NULL");
+        queryBuilder.andWhere("tournament.tournament_event_uuid IS NULL");
         queryBuilder.andWhere("tournament.end_date >= :date", { date: new Date(new Date().setDate(new Date().getDay() - 1)) });
         queryBuilder.andWhere("tournament.deletedAt IS NULL)");
         queryBuilder.limit(limit - count);
@@ -516,6 +521,7 @@ export default class TournamentController {
       if (limit && count < limit) {
         queryBuilder.orWhere("(tournament.featured_at IS NULL");
         queryBuilder.andWhere("tournament.published_at IS NOT NULL");
+        queryBuilder.andWhere("tournament.tournament_event_uuid IS NULL");
         queryBuilder.andWhere("tournament.end_date >= :date", { date: new Date(new Date().setDate(new Date().getDay() - 1)) });
         queryBuilder.andWhere("tournament.deletedAt IS NULL)");
         queryBuilder.limit(limit - count);
@@ -563,7 +569,6 @@ export default class TournamentController {
       if (limit) {
         queryBuilder.limit(limit);
       }
-      console.log('\n\n',queryBuilder.getQueryAndParameters(),'\n');
       
       const data = await queryBuilder.getMany();
 
@@ -592,7 +597,7 @@ export default class TournamentController {
         throw new Error("Player authentication required");
       }
 
-      const result = await this.tournamentService.requestJoinTournament(playerUuid, tournamentUuid, req?.body?.player_uuid);
+      const result = await this.tournamentService.requestJoinTournament(playerUuid, tournamentUuid, req?.body?.player_uuid, req?.body);
       if (result.error) {
         return res.status(result.error).json({ message: result.message });
       }
@@ -621,7 +626,7 @@ export default class TournamentController {
         throw new Error("Invalid status. Must be 'approve' or 'reject'");
       }
 
-      const result = await this.tournamentService.updateJoinRequestStatus(playerUuid, tournamentUuid, adminUuid, status);
+      const result = await this.tournamentService.updateJoinRequestStatus(playerUuid, tournamentUuid, adminUuid, status, req?.body?.tournament_event_uuid);
       
       utilLib.loggingRes(req, result);
       return res.json(result);

@@ -1,10 +1,15 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from "typeorm";
 import { Player } from "./Player";
+import { Tournament } from "./Tournament";
+import { TournamentEvent } from "./TournamentEvent";
 
 export enum DraftPickStatus {
   AVAILABLE = "AVAILABLE",
   PICKING = "PICKING",
-  PICKED = "PICKED"
+  PICKED = "PICKED",
+  REQUESTED = "REQUESTED",
+  REJECTED = "REJECTED",
+  APPROVED = "APPROVED"
 }
 
 @Entity("draft_picks")
@@ -24,6 +29,23 @@ export class DraftPick {
 
   @Column({ type: "varchar", length: 255, nullable: true })
   tournament_uuid: string | undefined;
+
+  @ManyToOne(() => Tournament, (tournament) => tournament.draft_picks)
+  @JoinColumn({ name: 'tournament_uuid', referencedColumnName: 'uuid' })
+  tournament: Tournament | undefined;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  tournament_event_uuid: string | undefined;
+
+  @ManyToOne(() => TournamentEvent, (tournamentEvent) => tournamentEvent.draft_picks)
+  @JoinColumn({ name: 'tournament_event_uuid', referencedColumnName: 'uuid' })
+  tournament_event: TournamentEvent | undefined;
+
+  @Column({ type: "text", nullable: true })
+  attachment: string | undefined;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  commitment_fee: number | undefined;
   
   @Column({ type: "varchar", length: 255 })
   drafted_by: string = "";

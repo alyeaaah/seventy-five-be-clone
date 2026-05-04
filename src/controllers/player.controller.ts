@@ -716,7 +716,6 @@ export default class PlayerController {
     
     try {
       // Check if the requester is an admin
-      console.log(req.data);
       
       if (req.data.role !== 'ADMIN' && req.data.role !== 'admin') {
         return res.status(403).json({ message: "Access denied. Admin role required." });

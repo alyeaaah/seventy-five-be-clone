@@ -2,15 +2,17 @@ import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { PTStatusEnum } from "../entities/PlayerTeam";
-import { EntityManager, In, IsNull, Not } from "typeorm";
+import { EntityManager, FindOptionsWhere, In, IsNull, Not } from "typeorm";
 import { v4 as uuidv4 } from 'uuid';
 import { Team } from "../entities/Team";
 import { TournamentGroup } from "../entities/TournamentGroups";
+import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
 
 export class TournamentService {
-  async requestJoinTournament(playerUuid: string, tournamentUuid: string, partnerUuid?: string) {
+  async requestJoinTournament(playerUuid: string, tournamentUuid: string, partnerUuid?: string, body?: any) {
     const tRepo = AppDataSource.getRepository(Tournament);
     const ptRepo = AppDataSource.getRepository(PlayerTeam);
+    const dpRepo = AppDataSource.getRepository(DraftPick);
 
     // Check if tournament exists
     const tournament = await tRepo.findOne({ where: { uuid: tournamentUuid, deletedAt: IsNull() } });
@@ -26,16 +28,27 @@ export class TournamentService {
     }
 
     // Check if player already joined
-    const existingRequest = await ptRepo.findOne({
+    const [hasJoined, hasRequested] = await Promise.all([
+      ptRepo.findOne({
       where: {
         player_uuid: playerUuid,
         tournament_uuid: tournamentUuid,
         deletedAt: IsNull()
       }
-    });
+    }),
+      dpRepo.findOne({
+      where: {
+        player_uuid: In([playerUuid, partnerUuid]),
+        status: Not(In([DraftPickStatus.REJECTED])),
+        deletedAt: IsNull(),
+      },
+    })]);
 
-    if (existingRequest) {
+    if (hasJoined) {
       throw new Error("You have already joined this tournament");
+    }
+    if (hasRequested) {
+      throw new Error("You have already Requested to join this tournament");
     }
 
     await AppDataSource.transaction(async (tm) => {
@@ -43,31 +56,53 @@ export class TournamentService {
       const teamUuid = uuidv4();
       // Create join request
       const playerTeams: PlayerTeam[] = [];
-      const playerTeam = new PlayerTeam();
-      playerTeam.uuid = uuidv4();
-      playerTeam.player_uuid = playerUuid;
-      playerTeam.tournament_uuid = tournamentUuid;
-      playerTeam.team_uuid = teamUuid;
-      playerTeam.status = PTStatusEnum.REQUESTED;
-      playerTeam.createdBy = playerUuid;
-      playerTeam.captain = true; // First player is captain
-
-      playerTeams.push(playerTeam);
-
-      if (partnerUuid && !tournament.draft_pick) {
-        const partnerTeam = new PlayerTeam();
-        partnerTeam.uuid = uuidv4();
-        partnerTeam.player_uuid = partnerUuid;
-        partnerTeam.tournament_uuid = tournamentUuid;
-        partnerTeam.team_uuid = teamUuid;
-        partnerTeam.status = PTStatusEnum.REQUESTED;
-        partnerTeam.createdBy = playerUuid;
-        partnerTeam.captain = false; // Partner is not captain
-
-        playerTeams.push(partnerTeam);
+      const draftPickEntity = new DraftPick;
+        draftPickEntity.status = DraftPickStatus.REQUESTED;
+      draftPickEntity.tournament_uuid = tournamentUuid;
+      if (body?.media_url) {
+        draftPickEntity.attachment = body.media_url;
       }
+      if (body?.commitment_fee) {
+        draftPickEntity.commitment_fee = body.commitment_fee;
+      }
+      if (!tournament.draft_pick && partnerUuid) {
+        draftPickEntity.player_uuid = partnerUuid;
+        draftPickEntity.drafted_by = playerUuid;
+      }
+      if (!!tournament.draft_pick) {
+        draftPickEntity.player_uuid = playerUuid;
+      }
+      await tm.save(draftPickEntity);
+
+      // old logic started
+      // const playerTeam = new PlayerTeam();
+      // playerTeam.uuid = uuidv4();
+      // playerTeam.player_uuid = playerUuid;
+      // playerTeam.tournament_uuid = tournamentUuid;
+      // playerTeam.team_uuid = teamUuid;
+      // playerTeam.status = PTStatusEnum.REQUESTED;
+      // playerTeam.createdBy = playerUuid;
+      // playerTeam.captain = true; // First player is captain
+
+      // playerTeams.push(playerTeam);
+
+      // if (partnerUuid && !tournament.draft_pick) {
+      //   const partnerTeam = new PlayerTeam();
+      //   partnerTeam.uuid = uuidv4();
+      //   partnerTeam.player_uuid = partnerUuid;
+      //   partnerTeam.tournament_uuid = tournamentUuid;
+      //   partnerTeam.team_uuid = teamUuid;
+      //   partnerTeam.status = PTStatusEnum.REQUESTED;
+      //   partnerTeam.createdBy = playerUuid;
+      //   partnerTeam.captain = false; // Partner is not captain
+
+      //   playerTeams.push(partnerTeam);
+      // }
 
       await tm.save(playerTeams);
+
+      // old logic ended
+
     });
 
 
@@ -77,9 +112,10 @@ export class TournamentService {
     };
   }
 
-  async updateJoinRequestStatus(playerUuid: string, tournamentUuid: string, adminUuid: string, status: 'approve' | 'reject') {
+  async updateJoinRequestStatus(playerUuid: string, tournamentUuid: string, adminUuid: string, status: 'approve' | 'reject', tournamentEventUuid?: string) {
     const ptRepo = AppDataSource.getRepository(PlayerTeam);
     const tRepo = AppDataSource.getRepository(Tournament);
+    const dpRepo = AppDataSource.getRepository(DraftPick);
 
     // Check if tournament exists
     const tournament = await tRepo.findOne({ where: { uuid: tournamentUuid, deletedAt: IsNull() } });
@@ -87,59 +123,82 @@ export class TournamentService {
       throw new Error("Tournament not found");
     }
 
-    const playerTeam = await ptRepo.findOne({
-      where: {
-        player_uuid: playerUuid,
-        tournament_uuid: tournamentUuid,
-        status: PTStatusEnum.REQUESTED,
-        deletedAt: IsNull()
-      }
-    });
-
-    if (!playerTeam) {
-      throw new Error("Join request not found");
+    const whereParams: FindOptionsWhere<DraftPick> = {
+      player_uuid: playerUuid,
+      tournament_uuid: tournamentUuid,
+      status: DraftPickStatus.REQUESTED,
+      deletedAt: IsNull()
+    };
+    if (tournamentEventUuid) {
+      whereParams.tournament_event_uuid = tournamentEventUuid;
     }
+    const requestedDraftPick = await dpRepo.findOne({
+      where: whereParams
+    });
+    if (!requestedDraftPick) {
+      throw new Error("Player request not found");
+    }
+    // old logic started
+    // const playerTeam = await ptRepo.findOne({
+    //   where: {
+    //     player_uuid: playerUuid,
+    //     tournament_uuid: tournamentUuid,
+    //     status: PTStatusEnum.REQUESTED,
+    //     deletedAt: IsNull()
+    //   }
+    // });
+
+    // if (!playerTeam) {
+    //   throw new Error("Join request not found");
+    // }
+    // old logic ended
 
     await AppDataSource.transaction(async (tm) => {
-      if (!tournament.draft_pick) {
-        const teamRepo = tm.getRepository(Team);
-        const [currentTeams, teamIsExist] = await Promise.all([
-          teamRepo.find({
-            where: {
-              tournament_uuid: tournamentUuid,
-              deletedAt: IsNull()
-            }
-          }),
-          teamRepo.findOne({
-            where: {
-              tournament_uuid: tournamentUuid,
-              uuid: playerTeam.team_uuid,
-              deletedAt: IsNull()
-            }
-          })
-        ]);
+      requestedDraftPick.status = status === 'approve' ? DraftPickStatus.APPROVED : DraftPickStatus.REJECTED;
+      await tm.save(requestedDraftPick);
 
-        if (!teamIsExist) {
-          const team = new Team();
-          team.uuid = playerTeam.team_uuid || uuidv4();
-          team.tournament_uuid = tournamentUuid;
-          team.name = `Team ${currentTeams.length + 1}`;
-          team.createdBy = adminUuid;
-          await tm.save(team);
-        }else{
-          throw new Error("Team already exists");
-          
-        }
-      }
+      // old logic started
 
-      playerTeam.status = status === 'approve' ? PTStatusEnum.APPROVED : PTStatusEnum.REJECTED;
-      // Note: updatedBy field doesn't exist in PlayerTeam entity
-      await tm.save(playerTeam);
+        // if (!tournament.draft_pick) {
+        //   const teamRepo = tm.getRepository(Team);
+        //   const [currentTeams, teamIsExist] = await Promise.all([
+        //     teamRepo.find({
+        //       where: {
+        //         tournament_uuid: tournamentUuid,
+        //         deletedAt: IsNull()
+        //       }
+        //     }),
+        //     teamRepo.findOne({
+        //       where: {
+        //         tournament_uuid: tournamentUuid,
+        //         uuid: playerTeam.team_uuid,
+        //         deletedAt: IsNull()
+        //       }
+        //     })
+        //   ]);
+
+        //   if (!teamIsExist) {
+        //     const team = new Team();
+        //     team.uuid = playerTeam.team_uuid || uuidv4();
+        //     team.tournament_uuid = tournamentUuid;
+        //     team.name = `Team ${currentTeams.length + 1}`;
+        //     team.createdBy = adminUuid;
+        //     await tm.save(team);
+        //   }else{
+        //     throw new Error("Team already exists");
+            
+        //   }
+        // }
+
+        // playerTeam.status = status === 'approve' ? PTStatusEnum.APPROVED : PTStatusEnum.REJECTED;
+        // // Note: updatedBy field doesn't exist in PlayerTeam entity
+        // await tm.save(playerTeam);
+      // old logic ended
     });
 
     return {
       message: `Join request ${status}d successfully`,
-      status: playerTeam.status
+      status: requestedDraftPick.status
     };
   }
 

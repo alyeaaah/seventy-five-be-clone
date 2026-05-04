@@ -40,6 +40,9 @@ export enum PTStatusEnum {
     @Column()
     tournament_uuid: string | undefined = "";
 
+    @Column({ type: "varchar", nullable: true })
+    tournament_event_uuid: string | undefined;
+
     @Column({ type: "enum", enum: PTStatusEnum, default: PTStatusEnum.REQUESTED })
     status: PTStatusEnum = PTStatusEnum.REQUESTED;
 

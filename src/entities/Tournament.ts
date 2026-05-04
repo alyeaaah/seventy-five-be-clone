@@ -18,6 +18,8 @@ import { GalleryAlbum } from "./GalleryAlbum";
 import { BlogContent } from "./BlogContents";
 import { League } from "./League";
 import { TournamentGroup } from "./TournamentGroups";
+import { TournamentEvent } from "./TournamentEvent";
+import { DraftPick } from "./DraftPick";
 
 export enum statusTournamentEnum {
   DRAFT = "DRAFT",
@@ -67,6 +69,21 @@ export class Tournament {
   @Column({ type: "decimal", precision: 10, scale: 2, default: 0.00 })
   commitment_fee: number = 0.00;
 
+  @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
+  early_bird_price: number | undefined;
+
+  @Column({ type: "timestamp", nullable: true })
+  early_bird_start_date: Date | undefined;
+
+  @Column({ type: "timestamp", nullable: true })
+  early_bird_end_date: Date | undefined;
+
+  @Column({ type: "int", nullable: true })
+  early_bird_limit: number | undefined;
+
+  @Column({ type: "boolean", default: false })
+  close_registration: boolean = false;
+
   @Column({ type: "datetime", nullable: true })
   start_date: Date | null = null;
 
@@ -105,6 +122,9 @@ export class Tournament {
 
   @Column({ type: "timestamp", nullable: true })
   published_at: Date | null | undefined;
+
+  @Column({ type: "varchar", nullable: true })
+  tournament_event_uuid: string | undefined;
 
   @Column({ type: "varchar", nullable: true })
   createdBy: string | undefined;
@@ -157,4 +177,11 @@ export class Tournament {
 
   @OneToMany(() => TournamentGroup, (group) => group.tournament)
   groups: TournamentGroup[] | undefined;
+
+  @OneToMany(() => DraftPick, (draftPick) => draftPick.tournament)
+  draft_picks: DraftPick[] | undefined;
+
+  @ManyToOne(() => TournamentEvent, (tournamentEvent) => tournamentEvent.tournaments)
+  @JoinColumn({ name: 'tournament_event_uuid', referencedColumnName: 'uuid' })
+  tournament_event: TournamentEvent | undefined;
 }

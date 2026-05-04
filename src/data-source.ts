@@ -51,6 +51,7 @@ import { Titles } from "./entities/Titles";
 import { PlayerTitles } from "./entities/PlayerTitles";
 import { DraftPick } from "./entities/DraftPick";
 import { MatchReferee } from "./entities/MatchReferee";
+import { TournamentEvent } from "./entities/TournamentEvent";
 
 const dataSourceOpt: DataSourceOptions = {
   type: "mysql",
@@ -120,6 +121,7 @@ const dataSourceOpt: DataSourceOptions = {
     PlayerTitles,
     DraftPick,
     MatchReferee,
+    TournamentEvent,
   ],
   migrationsRun: true,
   migrationsTableName: "migrations",
