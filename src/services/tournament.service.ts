@@ -75,7 +75,6 @@ export class TournamentService {
     if (tournament.max_player && currentRegistrations >= tournament.max_player) {
       throw new Error("This tournament has reached its maximum capacity. No more spots are available.");
     }
-
     // validate early bird
     if (body.commitment_fee && tournament.early_bird_price == body.commitment_fee) {
       if (
@@ -89,8 +88,9 @@ export class TournamentService {
       ) {
         throw new Error("This tournament is not available for early bird period registration");
       }
-      if (tournament.early_bird_limit && currentEarlyBirdRegistrations >= tournament.early_bird_limit && body.commitment_fee === tournament.early_bird_price) {
-        throw new Error("This tournament has reached its early bird limit");
+
+      if (tournament.early_bird_limit && currentEarlyBirdRegistrations >= tournament.early_bird_limit) {
+        throw new Error("This tournament has reached its early bird limit, please reload your browser");
       }
     }
 

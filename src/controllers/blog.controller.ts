@@ -348,7 +348,6 @@ export default class BlogContentController {
         utilLib.loggingRes(req, { cachedData });
         return res.json(cachedData);
       }
-      console.log("sssssss1\n\n", cachedData);
 
       const blogRepo = AppDataSource.getRepository(BlogContent);
       const queryBuilder = blogRepo
@@ -369,7 +368,6 @@ export default class BlogContentController {
         .take(limit);
       
       let [data, totalRecords] = await queryBuilder.getManyAndCount();
-      console.log("sssssss\n\n", data);
       
       if (!data) throw new Error(`Blog content not found`);
       if (data.length < limit) {
