@@ -207,7 +207,7 @@ export class TournamentService {
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold; color: #555;">Payment Amount:</td>
-                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #28a745;">$${paymentAmount.toFixed(2)}</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #28a745;">IDR ${paymentAmount.toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold; color: #555;">Payment Date:</td>
