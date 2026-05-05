@@ -81,13 +81,13 @@ export class TournamentService {
       if (
         !tournament.early_bird_price
       ) {
-        throw new Error("This tournament is not available for early bird registration");
+        throw new Error("This tournament is not available for early bird price registration");
       }
       if (
         tournament.early_bird_end_date && new Date() >= tournament.early_bird_end_date &&
         tournament.early_bird_start_date && new Date() <= tournament.early_bird_start_date
       ) {
-        throw new Error("This tournament is not available for early bird registration");
+        throw new Error("This tournament is not available for early bird time registration");
       }
       if (tournament.early_bird_limit && currentEarlyBirdRegistrations >= tournament.early_bird_limit && body.commitment_fee === tournament.early_bird_price) {
         throw new Error("This tournament has reached its early bird limit");
