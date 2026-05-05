@@ -341,6 +341,7 @@ export const route = (router: Router) => {
   router.get("/api/public/tournament-event", logMiddleware, tournamentEventCon.publicList);
   router.get("/api/tournament-event/:uuid", logMiddleware, authMiddleware, tournamentEventCon.publicDetail);
   router.get("/api/public/tournament-event/:uuid", logMiddleware, tournamentEventCon.publicDetail);
+  router.get("/api/public/tournament-event/:uuid/quota", logMiddleware, tournamentEventCon.checkQuota);
   router.get("/api/tournament/list/:attr", logMiddleware, tourCon.list);
   router.get("/api/tournament/detail/:uuid/:attr", logMiddleware, tourCon.detail);
 

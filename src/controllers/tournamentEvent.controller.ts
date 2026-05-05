@@ -453,4 +453,95 @@ export default class TournamentEventController {
       });
     }
   }
+
+  async checkQuota(req: Request, res: Response) {
+    try {
+      const { uuid } = req.params;
+      
+      if (!uuid) {
+        return res.status(400).json({
+          success: false,
+          message: "UUID is required"
+        });
+      }
+
+      const tournamentEventRepo = AppDataSource.getRepository(TournamentEvent);
+      const tournamentRepo = AppDataSource.getRepository(Tournament);
+      const draftPickRepo = AppDataSource.getRepository(DraftPick);
+      
+      // Find tournament event with its tournaments
+      const tournamentEvent = await tournamentEventRepo.findOne({
+        where: { uuid },
+        relations: {
+          tournaments: {
+            draft_picks: true
+          }
+        }
+      });
+
+      if (!tournamentEvent) {
+        return res.status(404).json({
+          success: false,
+          message: "Tournament event not found"
+        });
+      }
+
+      // Check quota for each tournament in the event
+      const quotaInfo = [];
+      for (const tournament of tournamentEvent.tournaments || []) {
+        const maxPlayers = tournament.max_player || 0;
+        const currentRegistrations = tournament.draft_picks?.filter(
+          dp => dp.status !== 'REJECTED'
+        ).length || 0;
+        
+        // Check early bird status
+        const now = new Date();
+        const isEarlyBird = tournament.early_bird_start_date && 
+                           tournament.early_bird_end_date && 
+                           currentRegistrations < (tournament.early_bird_limit || 0) &&
+                           now >= tournament.early_bird_start_date && 
+                           now <= tournament.early_bird_end_date;
+        
+        // Calculate early bird quota
+        const earlyBirdRegistrations = isEarlyBird ? 
+          tournament.draft_picks?.filter(
+            dp => dp.status !== 'REJECTED' && 
+            dp.commitment_fee == (tournament.early_bird_price || 0) && 
+              dp.createdAt <= tournament.early_bird_end_date! &&
+              dp.createdAt >= tournament.early_bird_start_date!
+          ).length || 0 : 0;
+        
+        const remainingEarlyBirdQuota = isEarlyBird ? 
+          Math.max(0, (tournament.early_bird_limit || 0) - earlyBirdRegistrations) : 0;
+        
+        // Calculate remaining quota
+        const remainingQuota = Math.max(0, maxPlayers - currentRegistrations);
+        
+        // Check if user has joined (if user info is available)
+        const playerUuid = (req as any).user?.uuid || (req as any).data?.uuid;
+        const hasJoined = playerUuid ? 
+          tournament.draft_picks?.some(dp => dp.player_uuid === playerUuid && dp.status !== 'REJECTED') || false : false;
+
+        quotaInfo.push({
+          tournament_uuid: tournament.uuid,
+          is_early_bird: isEarlyBird,
+          remaining_quota_early_bird: remainingEarlyBirdQuota,
+          has_joined: hasJoined,
+          remaining_quota: remainingQuota
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: quotaInfo,
+        message: "Tournament event quota retrieved successfully"
+      });
+    } catch (error) {
+      console.error("Error checking tournament event quota:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to check tournament event quota"
+      });
+    }
+  }
 }
