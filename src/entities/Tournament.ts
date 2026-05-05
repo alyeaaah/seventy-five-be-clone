@@ -54,6 +54,9 @@ export class Tournament {
   @Column()
   description: string = "";
 
+  @Column({ type: "varchar", nullable: true })
+  subtitle: string | undefined;
+
   @Column()
   media_url: string = "";
 

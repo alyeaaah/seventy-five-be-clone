@@ -89,6 +89,9 @@ export class Player {
 
   @Column()
   socialMediaX: string = "";
+
+  @Column({ type: "varchar", nullable: true })
+  socialMediaReclub: string | undefined;
   
   @Column({ type: "enum", enum: ForehandEnum, nullable: true })  
   playstyleForehand: string | undefined;

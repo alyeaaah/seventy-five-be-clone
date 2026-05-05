@@ -12,6 +12,7 @@ import { DraftPick } from "./DraftPick";
 
 export enum statusTournamentEventEnum {
   DRAFT = "DRAFT",
+  PUBLISHED = "PUBLISHED",
   POSTPONED = "POSTPONED",
   ONGOING = "ONGOING",
   ENDED = "ENDED",
