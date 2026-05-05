@@ -51,6 +51,41 @@ export class TournamentService {
       throw new Error("You have already Requested to join this tournament");
     }
 
+    // Check tournament quota availability
+    const currentRegistrations = await dpRepo.count({
+      where: {
+        tournament_uuid: tournamentUuid,
+        status: Not(In([DraftPickStatus.REJECTED])),
+        deletedAt: IsNull()
+      }
+    });
+
+    const currentEarlyBirdRegistrations = await dpRepo.count({
+      where: {
+        tournament_uuid: tournamentUuid,
+        status: Not(In([DraftPickStatus.REJECTED])),
+        commitment_fee: tournament.early_bird_price,
+        deletedAt: IsNull()
+      }
+    });
+    if (tournament.max_player && currentRegistrations >= tournament.max_player) {
+      throw new Error("This tournament has reached its maximum capacity. No more spots are available.");
+    }
+
+    // validate early bird
+    if (body.commitment_fee && tournament.early_bird_price == body.commitment_fee) {
+      if (
+        !(tournament.early_bird_price &&
+        tournament.early_bird_end_date && new Date() <= tournament.early_bird_end_date &&
+        tournament.early_bird_start_date && new Date() >= tournament.early_bird_start_date)
+      ) {
+        throw new Error("This tournament is not available for early bird registration");
+      }
+      if (tournament.early_bird_limit && currentEarlyBirdRegistrations >= tournament.early_bird_limit) {
+        throw new Error("This tournament has reached its early bird limit");
+      }
+    }
+
     await AppDataSource.transaction(async (tm) => {
       
       const teamUuid = uuidv4();
