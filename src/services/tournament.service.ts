@@ -42,6 +42,7 @@ export class TournamentService {
       dpRepo.findOne({
       where: {
         player_uuid: In([playerUuid, partnerUuid]),
+        tournament_uuid: tournamentUuid,
         status: Not(In([DraftPickStatus.REJECTED])),
         deletedAt: IsNull(),
       },
