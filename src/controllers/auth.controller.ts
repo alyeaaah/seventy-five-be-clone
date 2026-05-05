@@ -128,7 +128,6 @@ export default class AuthController {
           pass: config.smtp.pass,
         },
       }
-      console.log("\n\n conf\n", smtpConfig);
       
       // Send reset email
       const transporter = nodemailer.createTransport(smtpConfig);

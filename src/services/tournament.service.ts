@@ -102,6 +102,7 @@ export class TournamentService {
       const draftPickEntity = new DraftPick;
         draftPickEntity.status = DraftPickStatus.REQUESTED;
       draftPickEntity.tournament_uuid = tournamentUuid;
+      draftPickEntity.tournament_event_uuid = tournament.tournament_event_uuid;
       if (body?.media_url) {
         draftPickEntity.attachment = body.media_url;
       }

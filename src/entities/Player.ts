@@ -200,6 +200,9 @@ export class Player {
   @OneToMany(() => DraftPick, (draftPick) => draftPick.player)
   draftPicks: DraftPick[] | undefined;
 
+  @OneToMany(() => DraftPick, (draftPick) => draftPick.partner)
+  draftPickPartner: DraftPick[] | undefined;
+
   @OneToMany(() => MatchReferee, (matchReferee) => matchReferee.player)
   matchRefereeAssignments: MatchReferee[] | undefined;
     

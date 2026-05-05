@@ -8,6 +8,7 @@ import AuthController from '../controllers/auth.controller';
 import PlayerController from '../controllers/player.controller';
 import TournamentController from '../controllers/tournament.controller';
 import TournamentEventController from '../controllers/tournamentEvent.controller';
+import TournamentParticipantController from '../controllers/tournament-participant.controller';
 import RuleController from '../controllers/rule.controller';
 import TeamController from '../controllers/team.controller';
 import MatchController from '../controllers/match.controller';
@@ -44,6 +45,7 @@ const userCon = new UserController();
 const playerCon = new PlayerController();
 const tourCon = new TournamentController();
 const tournamentEventCon = new TournamentEventController();
+const tournamentParticipantCon = new TournamentParticipantController();
 const ruleCon = new RuleController();
 const teamCon = new TeamController();
 const matchCon = new MatchController();
@@ -142,6 +144,11 @@ export const route = (router: Router) => {
   router.post("/api/tournament/:uuid/join", logMiddleware, authMiddleware, tourCon.joinTournament);
   router.put("/api/tournament/:tournamentUuid/players/:playerUuid/approval", logMiddleware, authMiddleware, tourCon.updateJoinRequestStatus);
   router.put("/api/tournament/:tournamentUuid/teams/approval", logMiddleware, authMiddleware, tourCon.updateTeamJoinRequestStatus);
+  router.get("/api/tournament/:tournamentUuid/participants", logMiddleware, authMiddleware, tournamentParticipantCon.getParticipants);
+  router.put("/api/tournament/:tournamentUuid/participants", logMiddleware, authMiddleware, tournamentParticipantCon.updateParticipants);
+  router.delete("/api/tournament/:tournamentUuid/participants/:playerUuid", logMiddleware, authMiddleware, tournamentParticipantCon.removeParticipant);
+  router.put("/api/tournament/:tournamentUuid/participants/bulk-status", logMiddleware, authMiddleware, tournamentParticipantCon.bulkUpdateStatus);
+  
   router.get("/api/tournament/detail/team/participants/:tournamentUuid", logMiddleware, authMiddleware, tourCon.getTeamParticipants);
 
   router.post("/api/tournament/:uuid/add-team", logMiddleware, authMiddleware, tourCon.addTeam);

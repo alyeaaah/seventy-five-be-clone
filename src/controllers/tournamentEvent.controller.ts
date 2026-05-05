@@ -8,7 +8,7 @@ import {
   tournamentEventUpdatePayloadSchema,
   tournamentEventListQuerySchema
 } from "../schemas/tournamentEvent.schema";
-import { DraftPick } from "../entities/DraftPick";
+import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
 import { IsNull } from "typeorm";
 
 export default class TournamentEventController {
@@ -124,6 +124,7 @@ export default class TournamentEventController {
       }
 
       const tournamentEventRepo = AppDataSource.getRepository(TournamentEvent);
+      const dpRepo = AppDataSource.getRepository(DraftPick);
       
       const tournamentEvent = await tournamentEventRepo.findOne({
         where: { uuid },
@@ -140,11 +141,39 @@ export default class TournamentEventController {
           message: "Tournament event not found"
         });
       }
-      tournamentEvent.commitment_fee =  Number(tournamentEvent.commitment_fee||"0" ) ;
-
+      tournamentEvent.commitment_fee = Number(tournamentEvent.commitment_fee || "0");
+      
+        const [requested, approved] = await Promise.all([
+          dpRepo.find({
+            where: {
+              tournament_event_uuid: tournamentEvent.uuid,
+              status: DraftPickStatus.REQUESTED,
+              deletedAt: IsNull()
+            }
+          }),
+          dpRepo.find({
+            where: {
+              tournament_event_uuid: tournamentEvent.uuid,
+              status: DraftPickStatus.APPROVED,
+              deletedAt: IsNull()
+            }
+          })
+        ]);
+        
+      
+      const result = {
+        ...tournamentEvent,
+        tournaments: tournamentEvent.tournaments?.map(t => ({
+          ...t,
+          counter: {
+            requested: requested.filter(dp => dp.tournament_uuid === t.uuid).length,
+            approved: approved.filter(dp => dp.tournament_uuid === t.uuid).length
+          }
+        }))
+      };
       return res.json({
         success: true,
-        data: tournamentEvent,
+        data: result,
         message: "Tournament event retrieved successfully"
       });
     } catch (error) {
@@ -426,7 +455,6 @@ export default class TournamentEventController {
           message: "Tournament event not found"
         });
       }
-      console.log(playerUuid,"\n\n-----");
       
       const result = {
         ...tournamentEvent,

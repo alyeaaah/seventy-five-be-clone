@@ -24,6 +24,10 @@ export class DraftPick {
   @JoinColumn({ name: 'player_uuid', referencedColumnName: 'uuid' })
   player: Player | undefined;
 
+  @ManyToOne(() => Player, (player) => player.draftPickPartner)
+  @JoinColumn({ name: 'drafted_by', referencedColumnName: 'uuid' })
+  partner: Player | undefined;
+
   @Column({ type: "varchar", length: 255, nullable: true })
   teams_uuid: string | undefined;
 
