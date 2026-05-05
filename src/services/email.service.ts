@@ -40,7 +40,7 @@ export class EmailService {
   }
 
   async sendConfirmationEmail(email: string, name: string, confirmationCode: string): Promise<void> {
-    const confirmationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirm-email?code=${confirmationCode}`;
+    const confirmationUrl = `${process.env.FRONTEND_URL || 'https://seventyfive.club'}/confirm-email?code=${confirmationCode}`;
     
     const html = `
       <!DOCTYPE html>
