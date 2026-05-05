@@ -126,7 +126,12 @@ export default class TournamentEventController {
       const tournamentEventRepo = AppDataSource.getRepository(TournamentEvent);
       
       const tournamentEvent = await tournamentEventRepo.findOne({
-        where: { uuid }
+        where: { uuid },
+        relations: {
+          tournaments: {
+            league:true
+          }
+        }
       });
 
       if (!tournamentEvent) {
