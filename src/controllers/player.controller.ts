@@ -485,6 +485,15 @@ export default class PlayerController {
         newPlayer.createdBy = req.data?.uuid || undefined;
         
         newPlayer.name = body.name;
+        if (body.media_url) {
+          newPlayer.media_url = body.media_url;
+        }
+        if (body.socialMediaIg) {
+          newPlayer.socialMediaIg = body.socialMediaIg;
+        }
+        if (body.socialMediaReclub) {
+          newPlayer.socialMediaReclub = body.socialMediaReclub;
+        }
         newPlayer.username = body.username;
         newPlayer.email = body.email;
         newPlayer.password = hashedPassword;

@@ -1,7 +1,8 @@
 import z from "zod";
 export const registerSchema = z.object({
   name: z.string({required_error: "Player name is required"}),
-  username: z.string({required_error: "Username is required"}),
+  username: z.string({ required_error: "Username is required" }),
+  media_url:z.string().optional(),
   email: z.string({required_error: "Email is required"}),
   phone: z.string({required_error: "Phone is required" })
     .min(8, "Phone must be at least 8 characters long")
@@ -17,6 +18,8 @@ export const registerSchema = z.object({
     invalid_type_error: "Please select a valid gender (male or female)",
     message: "Please select a valid gender (male or female)",
   }),
+  socialMediaIg:z.string().optional(),
+  socialMediaReclub:z.string().optional(),
 }).extend({
   password: z.string()
     .min(8, { message: "Password must be at least 8 characters long" })
