@@ -1,5 +1,6 @@
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entities/Tournament";
+import { Player } from "../entities/Player";
 import { PlayerTeam } from "../entities/PlayerTeam";
 import { PTStatusEnum } from "../entities/PlayerTeam";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not } from "typeorm";
@@ -7,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Team } from "../entities/Team";
 import { TournamentGroup } from "../entities/TournamentGroups";
 import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
+import config from "../config";
+import nodemailer from "nodemailer";
 
 export class TournamentService {
   async requestJoinTournament(playerUuid: string, tournamentUuid: string, partnerUuid?: string, body?: any) {
@@ -137,7 +140,7 @@ export class TournamentService {
       await tm.save(playerTeams);
 
       // old logic ended
-
+      this.sendPaymentReceiptEmail(playerUuid, tournamentUuid, body.commitment_fee);
     });
 
 
@@ -145,6 +148,100 @@ export class TournamentService {
       message: "Join request sent successfully",
       status: PTStatusEnum.REQUESTED
     };
+  }
+
+  async sendPaymentReceiptEmail(playerUuid: string, tournamentUuid: string, paymentAmount: number) {
+    try {
+      // Fetch player information
+      const playerRepo = AppDataSource.getRepository(Player);
+      const player = await playerRepo.findOne({ 
+        where: { uuid: playerUuid, deletedAt: IsNull() } 
+      });
+      
+      if (!player) {
+        throw new Error('Player not found');
+      }
+
+      // Fetch tournament information
+      const tournamentRepo = AppDataSource.getRepository(Tournament);
+      const tournament = await tournamentRepo.findOne({ 
+        where: { uuid: tournamentUuid, deletedAt: IsNull() } 
+      });
+      
+      if (!tournament) {
+        throw new Error('Tournament not found');
+      }
+
+      const smtpConfig = {
+        host: config.smtp.host,
+        port: config.smtp.port,
+        family: 4,
+        secure: false,
+        logger: true,
+        debug: true,
+        auth: {
+          user: config.smtp.user,
+          pass: config.smtp.pass,
+        },
+      };
+
+      const transporter = nodemailer.createTransport(smtpConfig);
+
+      const mailOptions = {
+        from: config.smtp.from,
+        to: player.email,
+        subject: "Payment Receipt - Seventy Five Club",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Payment Receipt</h2>
+            <p>Hello ${player.name},</p>
+            <p>Thank you for your payment! This is your official receipt for the tournament registration.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">Payment Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Tournament:</td>
+                  <td style="padding: 8px 0; text-align: right;">${tournament.name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Payment Amount:</td>
+                  <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #28a745;">$${paymentAmount.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Payment Date:</td>
+                  <td style="padding: 8px 0; text-align: right;">${new Date().toLocaleDateString()}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #555;">Status:</td>
+                  <td style="padding: 8px 0; text-align: right;">
+                    <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                      PAID
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #856404;">
+                <strong>Important:</strong> Please keep this receipt for your records. If you have any questions about your payment, please contact our support team.
+              </p>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="color: #666; font-size: 14px;">Seventy Five Club Tennis Management</p>
+            <p style="color: #666; font-size: 12px;">This is an automated message. Please do not reply to this email.</p>
+          </div>
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`Payment receipt sent to ${player.email} for tournament: ${tournament.name}`);
+    } catch (error) {
+      console.error('Error sending payment receipt email:', error);
+      throw new Error('Failed to send payment receipt email');
+    }
   }
 
   async updateJoinRequestStatus(playerUuid: string, tournamentUuid: string, adminUuid: string, status: 'approve' | 'reject', tournamentEventUuid?: string) {

@@ -73,7 +73,8 @@ export const route = (router: Router) => {
   router.get("/api/general/upcoming-tournaments", logMiddleware, authMiddleware, generalCon.upcomingTournament);
 
   // Gallery
-  router.post("/api/gallery/upload", logMiddleware, authMiddleware, upload.single('image'), mediaCon.upload);
+  // router.post("/api/gallery/upload", logMiddleware, authMiddleware, upload.single('image'), mediaCon.upload);
+  router.post("/api/gallery/upload", logMiddleware, upload.single('image'), mediaCon.upload);
   router.post("/api/gallery/list", logMiddleware, authMiddleware, mediaCon.list);
 
   // Gallery Category
