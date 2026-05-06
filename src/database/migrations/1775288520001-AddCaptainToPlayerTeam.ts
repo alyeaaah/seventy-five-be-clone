@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddCaptainToPlayerTeam1724454400001 implements MigrationInterface {
+export class AddCaptainToPlayerTeam1775288520001 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
