@@ -77,11 +77,14 @@ export default class TournamentParticipantController {
 
   async getParticipants(req: Request, res: Response) {
     const { tournamentUuid } = req.params;
-    const { status, page = 1, limit = 10 } = req.query;
+    let { status, page = 1, limit = 20 } = req.query;
 
     try {
       if (!tournamentUuid) {
         throw new Error("Tournament UUID is required");
+      }
+      if(status === DraftPickStatus.REQUESTED) {
+        limit = 999;
       }
 
       const result = await this.tournamentParticipantService.getParticipants(
