@@ -138,7 +138,7 @@ export const route = (router: Router) => {
   router.put("/api/tournament/draft-pick/position/:uuid", logMiddleware, authMiddleware, playerCon.updateTournamentDraftPickPosition);
   router.post("/api/tournament/draft-pick/start/:uuid", logMiddleware, authMiddleware, playerCon.startDraftPick);
   router.post("/api/tournament/draft-pick/assign/:uuid", logMiddleware, authMiddleware, playerCon.assignDraftPick);
-  router.post("/api/tournament/draft-pick/:uuid", logMiddleware, authMiddleware, playerCon.addTournamentDraftPick);
+  router.put("/api/tournament/draft-pick/:uuid", logMiddleware, authMiddleware, playerCon.addTournamentDraftPick);
   
   // Tournament Participant Management
   router.post("/api/tournament/:uuid/join", logMiddleware, authMiddleware, tourCon.joinTournament);
