@@ -33,6 +33,7 @@ import ChallengerController from '../controllers/challenger.controller';
 import EmailVerificationController from '../controllers/emailVerification.controller';
 import PlayerPublicController from '../controllers/player-public.controller';
 import { WebSocketController } from '../controllers/websocket.controller';
+import { ConfigController } from '../controllers/config.controller';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -66,6 +67,7 @@ const leagueCon = new LeagueController();
 const playerBasedCon = new PlayerBasedController();
 const emailVerificationCon = new EmailVerificationController();
 const playerPublicCon = new PlayerPublicController();
+const configCon = new ConfigController();
 
 
 export const route = (router: Router) => {
@@ -368,6 +370,14 @@ export const route = (router: Router) => {
   router.post("/api/websocket/broadcast-ongoing-scores", logMiddleware, authMiddleware, WebSocketController.broadcastOngoingMatchScores);
   router.get("/api/websocket/status", logMiddleware, authMiddleware, WebSocketController.getWebSocketStatus);
 
+  // Config Management
+  router.get("/api/config", logMiddleware, configCon.getAll);
+  router.get("/api/config/type/:type", logMiddleware, configCon.getByType);
+  router.get("/api/config/:key", logMiddleware, configCon.getByKey);
+  router.post("/api/config", logMiddleware, authMiddleware, configCon.create);
+  router.put("/api/config/:key", logMiddleware, authMiddleware, configCon.update);
+  router.delete("/api/config/:key", logMiddleware, authMiddleware, configCon.delete);
+  router.post("/api/config/bulk", logMiddleware, authMiddleware, configCon.bulkUpsert);
 
   router.all('*', function (req, res) {
     res.status(404).json({ message: "Not found!" });
