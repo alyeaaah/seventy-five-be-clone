@@ -371,12 +371,28 @@ export default class BlogContentController {
       
       if (!data) throw new Error(`Blog content not found`);
       if (data.length < limit) {
-        const [newData, newTotalRecords] = await queryBuilder
-          .orWhere("blog.featured_at IS NULL")
-          .orWhere("blog.featured_at IS NOT NULL")
-          .orWhere("blog.createdAt IS NULL")
-          .orWhere("blog.createdAt IS NOT NULL")
-          .getManyAndCount();
+        const fallbackQuery = blogRepo
+          .createQueryBuilder("blog")
+          .leftJoinAndSelect("blog.tags", "tags")
+          .leftJoinAndSelect("tags.tag", "tag")
+          .leftJoinAndSelect("blog.author", "author")
+          .leftJoinAndSelect("blog.galleries", "gallery")
+          .where(
+            "blog.title LIKE :search AND blog.status = :status AND tags.deletedBy IS NULL AND tag.deletedBy IS NULL AND blog.deletedBy IS NULL",
+            { 
+              search: `%${search}%`, 
+              status: ContentStatus.PUBLISHED
+            }
+          )
+          .andWhere(
+            "(blog.featured_at IS NULL OR blog.createdAt IS NULL OR blog.createdAt < :date OR blog.featured_at < :date)",
+            { date: new Date(new Date().setDate(new Date().getDate() - 60)) }
+          )
+          .orderBy("blog.read", "DESC")
+          .skip(0)
+          .take(limit - data.length);
+        
+        const [newData, newTotalRecords] = await fallbackQuery.getManyAndCount();
         data.push(...newData);
         totalRecords += newTotalRecords;
       }

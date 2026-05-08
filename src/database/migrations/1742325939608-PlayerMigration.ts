@@ -136,7 +136,7 @@ export class PlayerMigration1742325939608 implements MigrationInterface {
             name: "role",
             type: "enum",
             enum: ["PLAYER", "ADMIN", "MARQUEEPLAYER"],
-            default: "PLAYER",
+            default: "'PLAYER'",
           },
           {
             name: "point_updated_at",
