@@ -313,7 +313,7 @@ export default class PlayerController {
       nickname,
       password,
       email,
-      phoneNumber,
+      phone,
       skills,
       address,
       city,
@@ -344,13 +344,14 @@ export default class PlayerController {
         const emailExist = await playerRepo.findOneBy({ email, uuid: Not(uuid), deletedAt: IsNull() });
         if(emailExist) throw new Error("Email already exists!");
       }
-      if(phoneNumber){
-        const phoneExist = await playerRepo.findOneBy({ phoneNumber, uuid: Not(uuid), deletedAt: IsNull() });
+      if(phone){
+        const phoneExist = await playerRepo.findOneBy({ phoneNumber: phone, uuid: Not(uuid), deletedAt: IsNull() });
         if(phoneExist) throw new Error("Phone Number already exists!");
       }
       if(gender && (gender != "m" && gender != "f")) {
         throw new Error("Gender should be m or f!");
       }
+console.log("\n\n",phone,"\n\n");
 
       let data = await playerRepo.findOneBy({ uuid });
       if (!data) throw new Error(`Data not found`);      
@@ -358,7 +359,7 @@ export default class PlayerController {
       data.username = username || data.username;
       data.email = email || data.email;
       data.nickname = nickname || data.nickname;
-      data.phoneNumber = phoneNumber || data.phoneNumber;
+      data.phoneNumber = phone || data.phoneNumber;
       data.skills = JSON.stringify(skills) || data.skills;
       data.address = address || data.address;
       data.city = city || data.city;

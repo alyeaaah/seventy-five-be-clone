@@ -9,11 +9,15 @@ export class TournamentParticipantService {
     tournamentUuid: string,
     status?: DraftPickStatus[],
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    isPublic: boolean = false
   ) {
     try {
       const dpRepo = AppDataSource.getRepository(DraftPick);
       const tournamentRepo = AppDataSource.getRepository(Tournament);
+      if (isPublic) {
+        limit = 99999;
+      }
 
       // Check if tournament exists
       const tournament = await tournamentRepo.findOne({
@@ -27,6 +31,105 @@ export class TournamentParticipantService {
       // Build where condition
       const whereCondition: FindOptionsWhere<DraftPick> = {
         tournament_uuid: tournamentUuid,
+        deletedAt: IsNull()
+      };
+
+      if (status && status.length > 0) {
+        whereCondition.status = In(status);
+      }
+
+      // Get total count for pagination
+      const totalCount = await dpRepo.count({
+        where: whereCondition
+      });
+
+      // Get draft picks with player relations
+      const draftPicks = await dpRepo.find({
+        where: whereCondition,
+        relations: {
+          player: {
+            level: true
+          },
+          partner: {
+            level: true
+          }
+        },
+        order: {
+          createdAt: 'ASC'
+        },
+        skip: (page - 1) * limit,
+        take: limit
+      });
+
+      // Format response data
+      const participants = draftPicks.map(dp => ({
+        ...dp,
+        player: dp.player ? {
+          uuid: dp.player.uuid,
+          name: dp.player.name,
+          nickname: dp.player.nickname,
+          email: dp.player.email,
+          media_url: dp.player.media_url,
+          city: dp.player.city,
+          level: dp.player.level ? {
+            uuid: dp.player.level.uuid,
+            name: dp.player.level.name
+          } : null
+        } : null,
+        partner: dp.partner ? {
+          uuid: dp.partner.uuid,
+          name: dp.partner.name,
+          nickname: dp.partner.nickname,
+          email: dp.partner.email,
+          media_url: dp.partner.media_url,
+          city: dp.partner.city,
+          level: dp.partner.level ? {
+            uuid: dp.partner.level.uuid,
+            name: dp.partner.level.name
+          } : null
+        } : null
+      }));
+
+      return {
+        participants,
+        pagination: {
+          current: page,
+          pageSize: limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit)
+        }
+      };
+
+    } catch (error) {
+      console.error('Error getting tournament participants:', error);
+      throw error;
+    }
+  }
+  async getParticipantsByEvent(
+    tournamentEventUuid: string,
+    status?: DraftPickStatus[],
+    page: number = 1,
+    limit: number = 10,
+    isPublic: boolean = false
+  ) {
+    try {
+      const dpRepo = AppDataSource.getRepository(DraftPick);
+      const tournamentRepo = AppDataSource.getRepository(Tournament);
+      if (isPublic) {
+        limit = 99999;
+      }
+      // Check if tournament exists
+      const tournament = await tournamentRepo.findOne({
+        where: { tournament_event_uuid: tournamentEventUuid, deletedAt: IsNull() }
+      });
+
+      if (!tournament) {
+        throw new Error("Tournament not found");
+      }
+
+      // Build where condition
+      const whereCondition: FindOptionsWhere<DraftPick> = {
+        tournament_event_uuid: tournamentEventUuid,
         deletedAt: IsNull()
       };
 

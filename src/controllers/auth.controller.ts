@@ -132,7 +132,7 @@ export default class AuthController {
       // Send reset email
       const transporter = nodemailer.createTransport(smtpConfig);
 
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${process.env.FRONTEND_URL || 'https://seventyfive.club'}/reset-password?token=${resetToken}`;
       
       const mailOptions = {
         from: config.smtp.from,

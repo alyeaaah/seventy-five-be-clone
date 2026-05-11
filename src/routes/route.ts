@@ -146,7 +146,7 @@ export const route = (router: Router) => {
   router.post("/api/tournament/:uuid/join", logMiddleware, authMiddleware, tourCon.joinTournament);
   router.put("/api/tournament/:tournamentUuid/players/:playerUuid/approval", logMiddleware, authMiddleware, tourCon.updateJoinRequestStatus);
   router.put("/api/tournament/:tournamentUuid/teams/approval", logMiddleware, authMiddleware, tourCon.updateTeamJoinRequestStatus);
-  router.get("/api/tournament/:tournamentUuid/participants", logMiddleware, authMiddleware, tournamentParticipantCon.getParticipants);
+  router.get("/api/tournament/:tournamentUuid/participants", logMiddleware, authMiddleware, (req, res) => tournamentParticipantCon.getParticipants(req, res));
   router.put("/api/tournament/:tournamentUuid/participants", logMiddleware, authMiddleware, tournamentParticipantCon.updateParticipants);
   router.delete("/api/tournament/:tournamentUuid/participants/:playerUuid", logMiddleware, authMiddleware, tournamentParticipantCon.removeParticipant);
   router.put("/api/tournament/:tournamentUuid/participants/bulk-status", logMiddleware, authMiddleware, tournamentParticipantCon.bulkUpdateStatus);
@@ -287,6 +287,7 @@ export const route = (router: Router) => {
   router.get("/api/public/tournament/player/joined/:player_uuid", logMiddleware, playerBasedCon.getTournamentsByPlayer);
   router.get("/api/public/tournament/detail/participants/:tournamentUuid", logMiddleware, tourCon.getTeamParticipants);
   router.get("/api/public/tournament/groups/:uuid", logMiddleware, matchCon.publicTournamentGroup);
+  router.get("/api/public/tournament/:tournamentUuid/participants", logMiddleware, (req, res) => tournamentParticipantCon.getParticipants(req, res, true));
   router.get("/api/player/tournament/joined", logMiddleware, authMiddleware, playerBasedCon.getTournamentsByPlayer);
   router.get("/api/player/tournament/upcoming", logMiddleware, authMiddleware, playerBasedCon.getUpcomingTournamentByPlayer);
   router.get("/api/player/tournament/:uuid", logMiddleware, authMiddleware, tourCon.publicDetail);

@@ -69,6 +69,15 @@ export default class Util {
       })
     );
   }
+  logging(req: any, data: any) {
+    this.loggerError.error(
+      `[LOGGER]:`,
+      JSON.stringify({
+        process: req,
+        data: data,
+      })
+    );
+  }
 
   // Redis methods dihapus - gunakan RedisLib.getInstance() untuk akses Redis
   // Method ini dihapus untuk menghindari duplikasi dengan RedisLib

@@ -8,6 +8,7 @@ export enum DraftPickStatus {
   PICKING = "PICKING",
   PICKED = "PICKED",
   REQUESTED = "REQUESTED",
+  WAITLISTED = "WAITLISTED",
   REJECTED = "REJECTED",
   APPROVED = "APPROVED"
 }
@@ -66,6 +67,12 @@ export class DraftPick {
 
   @Column({ type: "boolean", default: false })
   seeded: boolean = false;
+
+  @Column({ type: "boolean", default: false })
+  approval_email_sent: boolean = false;
+
+  @Column({ type: "boolean", default: false })
+  draftpick_email_sent: boolean = false;
 
   @Column({ type: "varchar", length: 255, nullable: true })
   deletedBy: string | undefined;

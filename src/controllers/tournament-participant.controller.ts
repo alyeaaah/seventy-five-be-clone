@@ -7,6 +7,8 @@ import { TournamentParticipantService } from "../services/tournament-participant
 import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
 import { In, IsNull } from "typeorm";
 import { Response, Request } from "express";
+import { emailService } from "../services/email.service";
+import Util from "../lib/util.lib";
 
 export default class TournamentParticipantController {
   constructor() {
@@ -20,7 +22,7 @@ export default class TournamentParticipantController {
 
   async updateParticipants(req: Request, res: Response) {
     const { tournamentUuid } = req.params;
-    const { draft_pick_id, player_uuid, status } = req.body; // Array of participant data
+    const { draft_pick_id, player_uuid, status, notify_email, target_uuid } = req.body; // Array of participant data
 
     try {
       if (!tournamentUuid) {
@@ -59,7 +61,16 @@ export default class TournamentParticipantController {
           throw new Error("Draft pick not found");
         }
         dpData.status = status;
+        if (notify_email) {
+          dpData.approval_email_sent = true;
+        }
+        if (target_uuid) {
+          dpData.tournament_uuid = target_uuid;
+        }
         await tm.save(dpData);
+        if (notify_email) {
+          await this.sendEmailAproval(player_uuid, tournamentUuid, status);
+        }
       });
 
       res.status(200).json({
@@ -75,29 +86,40 @@ export default class TournamentParticipantController {
     }
   }
 
-  async getParticipants(req: Request, res: Response) {
+  async getParticipants(req: any, res: any, isPublic?: boolean) {
     const { tournamentUuid } = req.params;
-    let { status, page = 1, limit = 20 } = req.query;
-
+    let { status, page = 1, limit = 20, tournamentEventUuid } = req.query;
+    const userData = req.data?.uuid || undefined;
     try {
       if (!tournamentUuid) {
         throw new Error("Tournament UUID is required");
       }
-      if(status === DraftPickStatus.REQUESTED) {
-        limit = 999;
-      }
-
+    if (!tournamentEventUuid) {
       const result = await this.tournamentParticipantService.getParticipants(
         tournamentUuid,
         status ? (Array.isArray(status) ? status as DraftPickStatus[] : [status as DraftPickStatus]) : undefined,
         Number(page),
-        Number(limit)
+        Number(limit),
+        isPublic
       );
-
       res.status(200).json({
         success: true,
         data: result
       });
+    } else {
+      const result = await this.tournamentParticipantService.getParticipantsByEvent(
+        tournamentEventUuid as string,
+        status ? (Array.isArray(status) ? status as DraftPickStatus[] : [status as DraftPickStatus]) : undefined,
+        Number(page),
+        Number(limit),
+        isPublic
+      );
+      res.status(200).json({
+        success: true,
+        data: result
+      });
+    }
+
 
     } catch (error: any) {
       res.status(400).json({
@@ -194,6 +216,48 @@ export default class TournamentParticipantController {
         success: false,
         message: error.message || "Failed to update participants status"
       });
+    }
+  }
+  async sendEmailAproval(player_uuid: string, tournamentUuid: string, status: string) {
+    const utilLib = Util.getInstance();
+    try {
+      // Fetch player information
+      const playerRepo = AppDataSource.getRepository(Player);
+      const player = await playerRepo.findOne({ 
+        where: { uuid: player_uuid, deletedAt: IsNull() } 
+      });
+
+      if (!player) {
+        console.error('Player not found for email notification:', player_uuid);
+        return;
+      }
+
+      // Fetch tournament information
+      const tournamentRepo = AppDataSource.getRepository(Tournament);
+      const tournament = await tournamentRepo.findOne({
+        where: { uuid: tournamentUuid, deletedAt: IsNull() }
+      });
+
+      if (!tournament) {
+        console.error('Tournament not found for email notification:', tournamentUuid);
+        return;
+      }
+
+      // Send tournament status email using email service
+      await emailService.sendTournamentStatusEmail(
+        player.email,
+        player.name,
+        tournament.name,
+        tournament.type,
+        tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD',
+        'TBD',
+        status
+      );
+
+      utilLib.logging('Info',`Tournament status email sent to ${player.email}: ${status}`);
+
+    } catch (error) {
+      utilLib.loggingError('Error sending tournament status email:', error);
     }
   }
 }

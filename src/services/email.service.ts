@@ -79,6 +79,105 @@ export class EmailService {
       html,
     });
   }
+
+  async sendTournamentStatusEmail(playerEmail: string, playerName: string, tournamentName: string, tournamentType: string, tournamentDate: string, tournamentLocation: string, status: string): Promise<void> {
+    const isApproved = status.toUpperCase() === 'APPROVED';
+    const statusText = isApproved ? 'Approved' : 'Updated';
+    const statusColor = isApproved ? '#10b981' : '#ef4444';
+    const statusBgColor = isApproved ? '#d1fae5' : '#fef2f2';
+    
+    const subject = isApproved 
+      ? `Tournament Registration Approved - ${tournamentName}`
+      : `Tournament Registration Update - ${tournamentName}`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Tournament Registration ${statusText}</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 0 0 5px 5px; }
+            .status-badge { display: inline-block; background: ${statusBgColor}; color: ${statusColor}; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin: 15px 0; }
+            .tournament-info { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .info-row { display: flex; justify-content: space-between; margin: 10px 0; }
+            .info-label { font-weight: bold; color: #666; }
+            .info-value { color: #333; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Seventy Five Tennis Club</h1>
+            <p>Tournament Registration Update</p>
+          </div>
+          <div class="content">
+            <h2>Hi ${playerName},</h2>
+            <p>Your registration for the tournament below has been <span class="status-badge">${statusText}</span>.</p>
+            
+            <div class="tournament-info">
+              <h3>Tournament Details</h3>
+              <div class="info-row">
+                <span class="info-label">Tournament:</span>
+                <span class="info-value">${tournamentName}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Type:</span>
+                <span class="info-value">${tournamentType}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Date:</span>
+                <span class="info-value">${tournamentDate}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Location:</span>
+                <span class="info-value">${tournamentLocation}</span>
+              </div>
+            </div>
+
+            ${isApproved ? `
+              <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+                <h3 style="color: #065f46; margin-top: 0;">🎉 Congratulations!</h3>
+                <p style="color: #065f46;">Your registration has been approved. You are now officially registered for this tournament.</p>
+                <p style="color: #065f46;">Please make sure to arrive at least 30 minutes before your scheduled match time.</p>
+                <p style="color: #065f46;">If you have any questions, please don't hesitate to contact us.</p>
+              </div>
+              <a href="${process.env.FRONTEND_URL || 'https://seventyfive.club'}/tournaments" class="button">
+                View Tournament Details
+              </a>
+            ` : `
+              <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <h3 style="color: #991b1b; margin-top: 0;">Registration Update</h3>
+                <p style="color: #991b1b;">Your tournament registration status has been updated to ${status}.</p>
+                <p style="color: #991b1b;">If you have questions about your registration status, please contact our tournament administrators.</p>
+              </div>
+              <a href="${process.env.FRONTEND_URL || 'https://seventyfive.club'}/tournaments" class="button">
+                View Other Tournaments
+              </a>
+            `}
+
+            <p style="margin-top: 30px; color: #666; font-size: 14px;">
+              If you have questions about your registration, please contact our support team.
+            </p>
+          </div>
+          <div class="footer">
+            <p>&copy; 2024 Seventy Five Tennis Club. All rights reserved.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await this.sendEmail({
+      to: playerEmail,
+      subject,
+      html,
+    });
+
+    console.log(`Tournament status email sent to ${playerEmail}: ${status}`);
+  }
 }
 
 export const emailService = new EmailService();
