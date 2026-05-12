@@ -95,7 +95,7 @@ export class EmailService {
           <title>Tournament Registration ${statusText}</title>
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #064E3B; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .header { background: #064E3B; color: white; padding: 12px; text-align: center; border-radius: 5px 5px 0 0; }
             .content { background: #f9f9f9; padding: 8px 30px 30px; border: 1px solid #ddd; border-radius: 0 0 5px 5px; }
             .status-badge { display: inline-block; background: ${statusBgColor}; color: ${statusColor}; padding: 8px 16px; border-radius: 20px; font-weight: bold; margin: 15px 0; }
             .tournament-info { background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; }
@@ -107,11 +107,10 @@ export class EmailService {
           </style>
         </head>
         <body>
-          <div class="header" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-            <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="60" height="48" style="display: block;">
-            <div>
+          <div class="header" style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="70" height="70" style="display: block; object-fit:contain;">
+
               <h1 style="margin: 0; font-size: 24px;">Seventy Five Tennis Club</h1>
-              </div>
           </div>
           <div class="content">
             <p style="margin: 4px auto; font-size: 16px; width:100%; text-align:center;">Tournament Registration Update</p>
