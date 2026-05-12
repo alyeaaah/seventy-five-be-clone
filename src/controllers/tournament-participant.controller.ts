@@ -248,9 +248,9 @@ export default class TournamentParticipantController {
         player.email,
         player.name,
         tournament.name,
-        tournament.type,
+        tournament.type+ " Doubles",
         tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD',
-        'TBD',
+        tournament.court?.name || "Seventy Five Basecamp",
         status
       );
 

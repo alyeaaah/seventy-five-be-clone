@@ -9,6 +9,7 @@ import PlayerController from '../controllers/player.controller';
 import TournamentController from '../controllers/tournament.controller';
 import TournamentEventController from '../controllers/tournamentEvent.controller';
 import TournamentParticipantController from '../controllers/tournament-participant.controller';
+import { EmailPreviewController } from '../controllers/email-preview.controller';
 import RuleController from '../controllers/rule.controller';
 import TeamController from '../controllers/team.controller';
 import MatchController from '../controllers/match.controller';
@@ -47,6 +48,7 @@ const playerCon = new PlayerController();
 const tourCon = new TournamentController();
 const tournamentEventCon = new TournamentEventController();
 const tournamentParticipantCon = new TournamentParticipantController();
+const emailPreviewCon = new EmailPreviewController();
 const ruleCon = new RuleController();
 const teamCon = new TeamController();
 const matchCon = new MatchController();
@@ -375,6 +377,10 @@ export const route = (router: Router) => {
   router.get("/api/config", logMiddleware, configCon.getAll);
   router.get("/api/config/type/:type", logMiddleware, configCon.getByType);
   router.get("/api/config/:key", logMiddleware, configCon.getByKey);
+
+  // Email Preview (for development/testing)
+  router.get("/api/email-preview/tournament-status", logMiddleware, emailPreviewCon.previewTournamentStatusEmail);
+  router.get("/api/email-preview/:template", logMiddleware, emailPreviewCon.previewEmailTemplate);
   router.post("/api/config", logMiddleware, authMiddleware, configCon.create);
   router.put("/api/config/:key", logMiddleware, authMiddleware, configCon.update);
   router.delete("/api/config/:key", logMiddleware, authMiddleware, configCon.delete);
