@@ -235,7 +235,12 @@ export default class TournamentParticipantController {
       // Fetch tournament information
       const tournamentRepo = AppDataSource.getRepository(Tournament);
       const tournament = await tournamentRepo.findOne({
-        where: { uuid: tournamentUuid, deletedAt: IsNull() }
+        where: {
+          uuid: tournamentUuid, deletedAt: IsNull() 
+        },
+        relations: {
+          court: true,
+        }
       });
 
       if (!tournament) {
@@ -249,7 +254,7 @@ export default class TournamentParticipantController {
         player.name,
         tournament.name,
         tournament.type+ " Doubles",
-        tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD',
+        tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'TBD',
         tournament.court?.name || "Seventy Five Basecamp",
         status
       );
