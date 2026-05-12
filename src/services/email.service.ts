@@ -82,9 +82,10 @@ export class EmailService {
 
   async generateTournamentStatusEmailHtml(playerName: string, tournamentName: string, tournamentType: string, tournamentDate: string, tournamentLocation: string, status: string): Promise<string> {
     const isApproved = status.toUpperCase() === 'APPROVED';
+    const isWaitlisted = status.toUpperCase()==="WAITLISTED"
     const statusText = isApproved ? 'Approved' : 'Updated';
-    const statusColor = isApproved ? '#10b981' : '#ef4444';
-    const statusBgColor = isApproved ? '#d1fae5' : '#fef2f2';
+    const statusColor = isApproved ? '#10b981' : (isWaitlisted ? '#3b82f6' : '#ef4444');
+    const statusBgColor = isApproved ? '#d1fae5' : (isWaitlisted ? '#dbeafe' : '#fef2f2');
     
     const html = `
       <!DOCTYPE html>
@@ -161,6 +162,7 @@ export class EmailService {
               <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
                 <h3 style="color: #991b1b; margin-top: 0;">Registration Update</h3>
                 <p style="color: #991b1b;">Your tournament registration status has been updated to ${status}.</p>
+                ${ status =='WAITLISTED' ? 'This means you are currently on our waitlist. We prioritize players we have seen on court, but we will notify you if a spot becomes available.' : ''}
                 <p style="color: #991b1b;">If you have questions about your registration status, please contact our tournament administrators.</p>
               </div>
               <a href="${process.env.FRONTEND_URL || 'https://seventyfive.club'}/tournament" class="button">
