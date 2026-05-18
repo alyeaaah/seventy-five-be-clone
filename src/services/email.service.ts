@@ -107,12 +107,28 @@ export class EmailService {
           </style>
         </head>
         <body>
-          <div class="header" style="display: flex; align-items: center; justify-content: center; flex-direction: column !important; gap: 0px;">
-            <div style="display: flex; align-items: center; gap: 4px; flex-direction: row;">
-              <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="70" height="70" style="display: block; object-fit:contain;">
-              <h1 style="margin: 0; font-size: 24px;">Seventy Five Tennis Club</h1>
-            </div>
-            <p style="margin: -16px auto 4px; font-size: 12px; width:100%; text-align:center;">Tournament Registration Update</p>
+          <div class="header">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+              <tr>
+                <td style="text-align: center; padding-bottom: 4px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+                    <tr>
+                      <td style="padding-right: 4px; vertical-align: middle;">
+                        <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="70" height="70" style="display: block;">
+                      </td>
+                      <td style="vertical-align: middle;">
+                        <h1 style="margin: 0; font-size: 24px; color: white;">Seventy Five Tennis Club</h1>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="text-align: center; padding-top: 0;">
+                  <p style="margin: -16px auto 4px; font-size: 12px; color: white;">Tournament Registration Update</p>
+                </td>
+              </tr>
+            </table>
           </div>
           <div class="content">
             <h2>Hi ${playerName},</h2>
