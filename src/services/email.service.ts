@@ -52,7 +52,7 @@ export class EmailService {
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
           .header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
           .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 0 0 5px 5px; }
-          .button { display: inline-block; background: #064E3B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .button { display: inline-block; background: #064E3B; color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
           .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
         </style>
       </head>
@@ -103,7 +103,7 @@ export class EmailService {
             .info-label { font-weight: bold; color: #666; }
             .info-value { color: #333; }
             .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-            .button { display: inline-block; background: #064E3B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .button { display: inline-block; background: #064E3B; color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
           </style>
         </head>
         <body>
