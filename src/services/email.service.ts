@@ -52,7 +52,7 @@ export class EmailService {
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
           .header { background: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
           .content { background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 0 0 5px 5px; }
-          .button { display: inline-block; background: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .button { display: inline-block; background: #064E3B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
           .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
         </style>
       </head>
@@ -103,29 +103,42 @@ export class EmailService {
             .info-label { font-weight: bold; color: #666; }
             .info-value { color: #333; }
             .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
-            .button { display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .button { display: inline-block; background: #064E3B; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
           </style>
         </head>
         <body>
-          <div class="header" style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-            <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="70" height="70" style="display: block; object-fit:contain;">
-
+          <div class="header" style="display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 4px; flex-direction: row;">
+              <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="70" height="70" style="display: block; object-fit:contain;">
               <h1 style="margin: 0; font-size: 24px;">Seventy Five Tennis Club</h1>
+            </div>
+            <p style="margin: -16px auto 4px; font-size: 12px; width:100%; text-align:center;">Tournament Registration Update</p>
           </div>
           <div class="content">
-            <p style="margin: 4px auto; font-size: 16px; width:100%; text-align:center;">Tournament Registration Update</p>
             <h2>Hi ${playerName},</h2>
             <p>Your registration for the tournament below has been <span class="status-badge">${statusText}</span>.</p>
             
+            ${isApproved ? `
+              <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
+                <h3 style="color: #065f46; margin-top: 0;">🎉 Congratulations!</h3>
+                <p style="color: #065f46;">Your registration has been successfully approved to compete in ${tournamentName}.</p>
+                <p style="color: #065f46;">You are now officially confirmed as a participant in this tournament.</p>
+                <p style="color: #065f46;">For further updates and information, please stay tuned on our Instagram.</p>
+              </div>
+            ` : `
+              <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <h3 style="color: #991b1b; margin-top: 0;">Registration Update</h3>
+                <p style="color: #991b1b;">Your tournament registration status has been updated to ${status}.</p>
+                ${ status =='WAITLISTED' ? 'This means you are currently on our curation. We prioritize players we have seen on court, but we will notify you if a spot becomes available.' : ''}
+                <p style="color: #991b1b;">If you have questions about your registration status, please contact our tournament administrators.</p>
+              </div>
+            `}
+
             <div class="tournament-info">
               <h3>Tournament Details</h3>
               <div class="info-row">
                 <span class="info-label">Tournament:</span>
                 <span class="info-value">${tournamentName}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Type:</span>
-                <span class="info-value"> ${tournamentType}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Date:</span>
@@ -136,28 +149,11 @@ export class EmailService {
                 <span class="info-value">${tournamentLocation}</span>
               </div>
             </div>
-
-            ${isApproved ? `
-              <div style="background: #d1fae5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981;">
-                <h3 style="color: #065f46; margin-top: 0;">🎉 Congratulations!</h3>
-                <p style="color: #065f46;">Your registration has been approved. You are now officially registered for this tournament.</p>
-                <p style="color: #065f46;">Please make sure to arrive at least 30 minutes before your scheduled match time. A technical meeting will be scheduled prior to the tournament, and you will receive detailed information about the time, location, and agenda via email or Whatsapp Message.</p>
-                <p style="color: #065f46;">If you have any questions, please don't hesitate to contact us.</p>
-              </div>
+            <div style="width:100%; display: flex; flex-direction: column; align-items: center;">
               <a href="${process.env.FRONTEND_URL || 'https://seventyfive.club'}/tournament" class="button">
                 View Tournament Details
               </a>
-            ` : `
-              <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
-                <h3 style="color: #991b1b; margin-top: 0;">Registration Update</h3>
-                <p style="color: #991b1b;">Your tournament registration status has been updated to ${status}.</p>
-                ${ status =='WAITLISTED' ? 'This means you are currently on our curation. We prioritize players we have seen on court, but we will notify you if a spot becomes available.' : ''}
-                <p style="color: #991b1b;">If you have questions about your registration status, please contact our tournament administrators.</p>
-              </div>
-              <a href="${process.env.FRONTEND_URL || 'https://seventyfive.club'}/tournament" class="button">
-                View Other Tournaments
-              </a>
-            `}
+            </div>
 
             <p style="margin-top: 30px; color: #666; font-size: 14px;">
               If you have questions about your registration, please contact our support team.

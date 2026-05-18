@@ -6,8 +6,8 @@ export class EmailPreviewController {
     try {
       const {
         playerName = 'John Doe',
-        tournamentName = 'Summer Tennis Championship',
-        tournamentType = 'Singles',
+        tournamentName = '75 Tourney',
+        tournamentType = 'ROUND ROBIN',
         tournamentDate = '15 July 2024',
         tournamentLocation = 'Seventy Five Tennis Club',
         status = 'APPROVED'
