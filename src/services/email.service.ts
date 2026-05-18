@@ -107,7 +107,7 @@ export class EmailService {
           </style>
         </head>
         <body>
-          <div class="header" style="display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 4px;">
+          <div class="header" style="display: flex; align-items: center; justify-content: center; flex-direction: column !important; gap: 0px;">
             <div style="display: flex; align-items: center; gap: 4px; flex-direction: row;">
               <img src="https://res.cloudinary.com/doqyrkqgw/image/upload/v1778590132/SFLOGO_copy_q8lxgu.png" alt="Seventy Five Tennis Club Logo" width="70" height="70" style="display: block; object-fit:contain;">
               <h1 style="margin: 0; font-size: 24px;">Seventy Five Tennis Club</h1>
