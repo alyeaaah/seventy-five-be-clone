@@ -1,7 +1,8 @@
 import z from "zod";
 export const registerSchema = z.object({
   name: z.string({required_error: "Player name is required"}),
-  username: z.string({ required_error: "Username is required" }),
+  username: z.string({ required_error: "Username is required" })
+    .regex(/^[a-zA-Z0-9_.]+$/, "Username can only contain letters, numbers, underscores (_), and dots (.)"),
   media_url:z.string().optional(),
   email: z.string({required_error: "Email is required"}),
   phone: z.string({required_error: "Phone is required" })
