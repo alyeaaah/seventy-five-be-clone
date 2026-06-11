@@ -10,11 +10,27 @@ import { GalleryTags } from "../entities/GalleryTags";
 import { galleriesMediaSchema, galleryPlayersPayloadSchema } from "../schemas/gallery.schema";
 import { Player } from "../entities/Player";
 import { PlayerGallery } from "../entities/PlayerGallery";
+import sharp from "sharp";
 
 export default class MediaController {
   async upload(req: Request, res: Response) {
     const cloudinary: any = Container.get("cloudinary");
     try {
+      let imageBuffer = req?.file?.buffer;
+      if (imageBuffer) {
+        const metadata = await sharp(imageBuffer).metadata();
+        if (metadata.width && metadata.height && (metadata.width > 1600 || metadata.height > 1600)) {
+          imageBuffer = await sharp(imageBuffer)
+            .resize({
+              width: 1600,
+              height: 1600,
+              fit: "inside",
+              withoutEnlargement: true
+            })
+            .toBuffer();
+        }
+      }
+
       // Upload the image to Cloudinary
       const result = await cloudinary.uploader
         .upload_stream({ resource_type: "auto" }, (error: any, result: any) => {
@@ -30,7 +46,7 @@ export default class MediaController {
           const imageUrl = result.secure_url;
           res.status(200).json({ imageUrl });
         })
-        .end(req?.file?.buffer);
+        .end(imageBuffer);
     } catch (error: any) {
       console.log(error);
       return res.status(400).json(error.message);
