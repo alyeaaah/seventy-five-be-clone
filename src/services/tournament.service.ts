@@ -10,18 +10,21 @@ import { TournamentGroup } from "../entities/TournamentGroups";
 import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
 import config from "../config";
 import nodemailer from "nodemailer";
+import { TournamentEvent } from "../entities/TournamentEvent";
 
 export class TournamentService {
   async requestJoinTournament(playerUuid: string, tournamentUuid: string, partnerUuid?: string, body?: any) {
     const tRepo = AppDataSource.getRepository(Tournament);
     const ptRepo = AppDataSource.getRepository(PlayerTeam);
     const dpRepo = AppDataSource.getRepository(DraftPick);
+    const teRepo = AppDataSource.getRepository(TournamentEvent);
 
     // Check if tournament exists
     const tournament = await tRepo.findOne({ where: { uuid: tournamentUuid, deletedAt: IsNull() } });
     if (!tournament) {
       throw new Error("Tournament not found");
     }
+    const tournamentEvent = tournament.tournament_event_uuid ? await teRepo.findOne({ where: { uuid: tournament.tournament_event_uuid } }) : null;
 
     if (!tournament.draft_pick && !partnerUuid) {
       return {
@@ -53,6 +56,10 @@ export class TournamentService {
     }
     if (hasRequested) {
       throw new Error("You have already Requested to join this tournament");
+    }
+    const hasClosed = tournament.close_registration || (tournamentEvent && tournamentEvent.registration_closed && new Date() > tournamentEvent.registration_closed)
+    if (hasClosed) {
+      throw new Error("This tournament is closed for registration");
     }
 
     // Check tournament quota availability
