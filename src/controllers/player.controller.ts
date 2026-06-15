@@ -457,6 +457,9 @@ console.log("\n\n",phone,"\n\n");
     const utilLib = Util.getInstance();
     const validatedBody = registerSchema.safeParse(req.body);
     if (validatedBody.error) {
+      utilLib.loggingError(req, validatedBody.error.message)
+      utilLib.loggingError(req, validatedBody.error.errors)
+      utilLib.loggingError(req, validatedBody.error)
       return res.status(400).json({ message: "Invalid registration data", errors: validatedBody.error?.issues.map((e) => e.path + ': ' + e.message) });
     }
     const body = validatedBody.data;
