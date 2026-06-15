@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { Config, ConfigType } from "../entities/Config";
 import { IsNull, Not } from "typeorm";
 import Util from "../lib/util.lib";
+import RedisLib from "../lib/redis.lib";
 
 interface AuthenticatedRequest extends Request {
     data?: {
@@ -70,9 +71,16 @@ export class ConfigController {
     // GET /api/config/:key - Get config by key
     async getByKey(req: AuthenticatedRequest, res: Response) {
         const utilLib = Util.getInstance();
+        const redisLib = RedisLib.getInstance();
         const { key } = req.params;
         
         try {
+            const cachedConfig = await redisLib.redisget(`base-config:${key}`);
+            if (cachedConfig) {
+                utilLib.loggingRes(req, cachedConfig);
+                return res.json(cachedConfig);
+            }
+
             const configRepo = AppDataSource.getRepository(Config);
             const config = await configRepo.findOne({
                 where: { 
@@ -84,6 +92,8 @@ export class ConfigController {
             if (!config) {
                 throw new Error("Config not found");
             }
+
+            await redisLib.redisset(`base-config:${key}`, config, 3600);
 
             utilLib.loggingRes(req, config);
             return res.json(config);
@@ -174,6 +184,9 @@ export class ConfigController {
             config.updatedBy = req.data?.uuid ;
 
             const updatedConfig = await configRepo.save(config);
+            const redisLib = RedisLib.getInstance();
+            
+            await redisLib.redisdelPattern("base-config*");
 
             utilLib.loggingRes(req, updatedConfig);
             return res.json({
