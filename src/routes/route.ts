@@ -375,6 +375,7 @@ export const route = (router: Router) => {
 
   // Config Management
   router.get("/api/config", logMiddleware, configCon.getAll);
+  router.get("/api/config/clear-cache", logMiddleware, configCon.clearCache);
   router.get("/api/config/type/:type", logMiddleware, configCon.getByType);
   router.get("/api/config/:key", logMiddleware, configCon.getByKey);
 

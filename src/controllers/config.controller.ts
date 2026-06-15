@@ -222,6 +222,9 @@ export class ConfigController {
 
             await configRepo.save(config);
 
+            const redisLib = RedisLib.getInstance();
+            await redisLib.redisdelPattern("base-config*");
+
             utilLib.loggingRes(req, { message: "Config deleted successfully" });
             return res.json({ message: "Config deleted successfully" });
         } catch (error: any) {
@@ -332,6 +335,9 @@ export class ConfigController {
                 }
             }
 
+            const redisLib = RedisLib.getInstance();
+            await redisLib.redisdelPattern("base-config*");
+
             utilLib.loggingRes(req, { 
                 message: `Bulk operation completed successfully`,
                 results 
@@ -340,6 +346,19 @@ export class ConfigController {
                 message: "Bulk operation completed successfully",
                 results
             });
+        } catch (error: any) {
+            utilLib.loggingError(req, error.message);
+            return res.status(400).json({ message: error.message });
+        }
+    }
+    async clearCache(req: AuthenticatedRequest, res: Response) {
+        const utilLib = Util.getInstance();
+        try {
+            const redisLib = RedisLib.getInstance();
+            await redisLib.redisdelPattern("base-config*");
+
+            utilLib.loggingRes(req, { message: "Cache cleared successfully" });
+            return res.json({ message: "Cache cleared successfully" });
         } catch (error: any) {
             utilLib.loggingError(req, error.message);
             return res.status(400).json({ message: error.message });
