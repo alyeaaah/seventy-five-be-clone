@@ -9,6 +9,7 @@ export const tournamentEventCreatePayloadSchema = z.object({
   status: z.enum(["DRAFT", "POSTPONED", "ONGOING", "ENDED", "CANCELLED"]).optional().default("DRAFT"),
   published_at: z.string().datetime().optional(),
   media_url: z.string().optional(),
+  registration_closed: z.string().datetime().nullable().optional(),
 });
 
 export const tournamentEventUpdatePayloadSchema = z.object({
@@ -19,6 +20,7 @@ export const tournamentEventUpdatePayloadSchema = z.object({
   status: z.enum(["DRAFT", "POSTPONED", "ONGOING", "ENDED", "CANCELLED"]).optional(),
   published_at: z.string().datetime().optional(),
   media_url: z.string().optional(),
+  registration_closed: z.string().datetime().nullable().optional(),
 });
 
 // Tournament Event Response Schemas
@@ -32,6 +34,7 @@ export const tournamentEventResponseSchema = z.object({
   status: z.enum(["DRAFT", "POSTPONED", "ONGOING", "ENDED", "CANCELLED"]),
   published_at: z.string().datetime().nullable(),
   media_url: z.string().nullable(),
+  registration_closed: z.string().datetime().nullable(),
   created_by: z.string().nullable(),
   updated_by: z.string().nullable(),
   created_at: z.string().datetime(),

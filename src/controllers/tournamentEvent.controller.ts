@@ -83,7 +83,7 @@ export default class TournamentEventController {
         });
       }
 
-      const { name, description, rules, commitment_fee, status, published_at, media_url } = payloadValidation.data;
+      const { name, description, rules, commitment_fee, status, published_at, media_url, registration_closed } = payloadValidation.data;
       const tournamentEventRepo = AppDataSource.getRepository(TournamentEvent);
       
       const tournamentEvent = new TournamentEvent();
@@ -93,6 +93,7 @@ export default class TournamentEventController {
       tournamentEvent.commitment_fee = commitment_fee || 0;
       tournamentEvent.status = status as any || statusTournamentEventEnum.DRAFT;
       tournamentEvent.published_at = published_at ? new Date(published_at) : null;
+      tournamentEvent.registration_closed = registration_closed ? new Date(registration_closed) : null;
       tournamentEvent.media_url = media_url || undefined;
       tournamentEvent.created_by = (req as any).user?.uuid;
 
@@ -206,7 +207,7 @@ export default class TournamentEventController {
         });
       }
 
-      const { name, description, rules, commitment_fee, status, published_at, media_url } = payloadValidation.data;
+      const { name, description, rules, commitment_fee, status, published_at, media_url, registration_closed } = payloadValidation.data;
       const tournamentEventRepo = AppDataSource.getRepository(TournamentEvent);
       
       const tournamentEvent = await tournamentEventRepo.findOne({
@@ -227,6 +228,7 @@ export default class TournamentEventController {
       if (commitment_fee !== undefined) tournamentEvent.commitment_fee = commitment_fee;
       if (status !== undefined) tournamentEvent.status = status as any;
       if (published_at !== undefined) tournamentEvent.published_at = published_at ? new Date(published_at) : null;
+      if (registration_closed !== undefined) tournamentEvent.registration_closed = registration_closed ? new Date(registration_closed) : null;
       if (media_url !== undefined) tournamentEvent.media_url = media_url;
       tournamentEvent.updated_by = (req as any).user?.uuid;
 

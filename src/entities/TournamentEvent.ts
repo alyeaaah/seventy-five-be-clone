@@ -50,6 +50,9 @@ export class TournamentEvent {
   status: statusTournamentEventEnum = statusTournamentEventEnum.DRAFT;
 
   @Column({ type: "timestamp", nullable: true })
+  registration_closed: Date | null = null;
+
+  @Column({ type: "timestamp", nullable: true })
   published_at: Date | null = null;
 
   @Column({ type: "varchar", nullable: true })

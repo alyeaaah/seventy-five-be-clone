@@ -26,6 +26,9 @@ import { Sponsors } from "./Sponsors";
 
     @Column()
     sponsor_uuid: string = "";
+
+    @Column({ type: "enum", enum: ["OFFICIAL", "PARTNER", "SUPPORTING"], nullable: true })
+    type: string | undefined;
   
     @Column({ type: "varchar", nullable: true })
     createdBy: string | undefined;
