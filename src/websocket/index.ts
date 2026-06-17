@@ -115,6 +115,14 @@ class WebSocketService {
     this.io.emit('match_score_updated', [{ matchUuid, score: scores }]);
   }
 
+  broadcastVersion(versionParam: { version: string, force_update?: boolean }) {
+    if (!this.io) {
+      console.warn('WebSocket server not initialized');
+      return;
+    }
+    this.io.emit('version', versionParam);
+  }
+
   getIo() {
     return this.io;
   }

@@ -403,8 +403,9 @@ export default class TournamentController {
       const result = sponsors.map((s) => {
         return {
           ...s.sponsor,
+          sponsorType: s.type,
           sponsor_uuid: s.sponsor_uuid,
-          uuid: s.uuid
+          uuid: s.uuid,
         }
       });
       utilLib.loggingRes(req, { data: result });
