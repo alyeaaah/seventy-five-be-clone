@@ -12,7 +12,7 @@ import { EmailVerification } from "../entities/EmailVerification";
 import { emailService } from "../services/email.service";
 import { DraftPick, DraftPickStatus } from "../entities/DraftPick";
 import { Team } from "../entities/Team";
-import { PlayerTeam } from "../entities/PlayerTeam";
+import { PlayerTeam, PTStatusEnum } from "../entities/PlayerTeam";
 import { Tournament } from "../entities/Tournament";
 
 export default class PlayerController {
@@ -993,7 +993,7 @@ console.log("\n\n",phone,"\n\n");
     
     try {
       // Validation
-      if (!draftpick || !draftpick.id) {
+      if (!draftpick || (!!draftpick.player_uuid && !draftpick.id)) {
         throw new Error("teams array is required");
       }
 
@@ -1001,51 +1001,143 @@ console.log("\n\n",phone,"\n\n");
         const draftPickRepo = em.getRepository(DraftPick);
 
         // Process each team in the array
-        const { player_uuid, id, position, status, seeded } = draftpick;
+        const { player_uuid, id, position, status, seeded, players } = draftpick;
         
         // Validate required fields for each team
-        if (!tournamentUuid || !player_uuid || position === undefined || position === null || !status) {
+        if (!tournamentUuid || (!player_uuid && !players?.length) || position === undefined || position === null || !status) {
           throw new Error("player_uuid, position, and status are required for each team");
         }
+        let savedDraftPick;
+        if (!players && player_uuid) {
+          if (status == "APPROVED") {
+            
+            const existingPick = await draftPickRepo.findOne({
+              where: {
+                tournament_uuid: tournamentUuid,
+                id,
+                player_uuid,
+                drafted_by: "",
+                status: Not(DraftPickStatus.APPROVED),
+                deletedAt: IsNull()
+              }
+            });
+            if (!existingPick) {
+              throw new Error("Draft pick not found");
+            }
+            existingPick.status = status;
+            existingPick.seeded = false;
+            savedDraftPick = await draftPickRepo.save(existingPick);
+          } else {
+            // Check if position already exists for this tournament
+            const existingPick = await draftPickRepo.findOne({
+              where: {
+                tournament_uuid: tournamentUuid,
+                id,
+                player_uuid,
+                drafted_by: "",
+                status: DraftPickStatus.APPROVED,
+                deletedAt: IsNull()
+              }
+            });
+            let updatedPosition: number = position;
+            if (!existingPick) {
+              throw new Error("Draft pick not founds");
+            }
+            existingPick.position = updatedPosition || position;
+            if (position === 0) {
+              const otherExistingPick = await draftPickRepo.count({
+                where: {
+                  tournament_uuid: tournamentUuid,
+                  id: Not(id),
+                  player_uuid: Not(player_uuid),
+                  status: In([DraftPickStatus.AVAILABLE, DraftPickStatus.PICKED, DraftPickStatus.PICKING]),
+                  deletedAt: IsNull()
+                }
+              });
+              if (otherExistingPick) {
+                existingPick.position = otherExistingPick;
+              }
+            }
+            // Create new draft pick
+            existingPick.status = status;
+            existingPick.seeded = seeded || false;
 
-        // Check if position already exists for this tournament
-        const existingPick = await draftPickRepo.findOne({
-          where: {
-            tournament_uuid: tournamentUuid,
-            id,
-            player_uuid,
-            drafted_by: "",
-            status:DraftPickStatus.APPROVED,
-            deletedAt: IsNull()
+            savedDraftPick = await draftPickRepo.save(existingPick);
           }
-        });
-        let updatedPosition: number = position;
-        if (!existingPick) {
-          throw new Error("Draft pick not found");
-        }
-        existingPick.position = updatedPosition || position;
-        if (position === 0) {
+        } else if (!!players?.length){
+
+          // Check if position already exists for this tournament
+          const existingPicks = await draftPickRepo.find({
+            where: {
+              tournament_uuid: tournamentUuid,
+              player_uuid: In(players),
+              drafted_by: "",
+              status:In([DraftPickStatus.APPROVED]),
+              deletedAt: IsNull()
+            }
+          });
+          if (!existingPicks || existingPicks?.length !== players.length) {
+            throw new Error("One of Draft pick players not found");
+          }
+
           const otherExistingPick = await draftPickRepo.count({
             where: {
               tournament_uuid: tournamentUuid,
-              id: Not(id),
-              player_uuid: Not(player_uuid),
+              player_uuid: Not(In(players)),
+              seeded: seeded,
               status: In([DraftPickStatus.AVAILABLE, DraftPickStatus.PICKED, DraftPickStatus.PICKING]),
               deletedAt: IsNull()
             }
           });
-          if (otherExistingPick) {
-            existingPick.position = otherExistingPick;
+          for (const key in existingPicks) {
+            if (!existingPicks[key]) continue;
+            const element = existingPicks[key];
+            element.position = otherExistingPick + Number(key) + 1;
+            // Create new draft pick
+            element.status = status;
+            element.seeded = seeded || false;
           }
+
+          savedDraftPick = await draftPickRepo.save(existingPicks);
         }
-        // Create new draft pick
-        existingPick.status = status;
-        existingPick.seeded = seeded || false;
 
-        const savedDraftPick = await draftPickRepo.save(existingPick);
+        // always re adjust position on draft pick players that status in (available, picking, picked)
+        const [seededExistingPicks, unseededExistingPicks] = await Promise.all([
+          draftPickRepo.find({
+          where: {
+            tournament_uuid: tournamentUuid,
+            seeded: true,
+            status: In([DraftPickStatus.AVAILABLE, DraftPickStatus.PICKED, DraftPickStatus.PICKING]),
+            deletedAt: IsNull()
+          },
+          order: {
+            position: 'ASC'
+          }
+        }),
+        draftPickRepo.find({
+          where: {
+            tournament_uuid: tournamentUuid,
+            seeded: false,
+            status: In([DraftPickStatus.AVAILABLE, DraftPickStatus.PICKED, DraftPickStatus.PICKING]),
+            deletedAt: IsNull()
+          },
+          order: {
+            position: 'ASC'
+          }
+        })]);
+        for (const key in seededExistingPicks) {
+          if (!seededExistingPicks[key]) continue;
+          seededExistingPicks[key].position = Number(key) + 1;
+        }
+        for (const key in unseededExistingPicks) {
+          if (!unseededExistingPicks[key]) continue;
+          unseededExistingPicks[key].position = Number(key) + 1;
+        }
+        await draftPickRepo.save(seededExistingPicks);
+        await draftPickRepo.save(unseededExistingPicks);
 
-        utilLib.loggingRes(req, { data: savedDraftPick, message: `Draft picks added successfully` });
-        return res.json({ data: savedDraftPick, message: `Draft picks added successfully` });
+        utilLib.loggingRes(req, { data: savedDraftPick, message: status === "APPROVED" ? `Draft picks updated successfully` : `Draft picks added successfully` });
+        return res.json({ data: savedDraftPick, message: status === "APPROVED" ? `Draft picks updated successfully` : `Draft picks added successfully` });
       });
     } catch (error: any) {
       utilLib.loggingError(req, error.message);
@@ -1268,6 +1360,7 @@ console.log("\n\n",phone,"\n\n");
         newPickingPlayerTeam.uuid = uuidv4();
         newPickingPlayerTeam.player_uuid = pickingPlayer.player_uuid;
         newPickingPlayerTeam.captain = false;
+        newPickingPlayerTeam.status = PTStatusEnum.CONFIRMED;
         newPickingPlayerTeam.createdBy = req.data?.uuid || null;
 
         const newPartnerPlayerTeam = new PlayerTeam()
@@ -1276,6 +1369,7 @@ console.log("\n\n",phone,"\n\n");
         newPartnerPlayerTeam.uuid = uuidv4();
         newPartnerPlayerTeam.player_uuid = partnerPlayer.player_uuid;
         newPartnerPlayerTeam.captain = true;
+        newPartnerPlayerTeam.status = PTStatusEnum.CONFIRMED;
         newPartnerPlayerTeam.createdBy = req.data?.uuid || null;
 
         const newTeam = new Team()

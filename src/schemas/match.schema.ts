@@ -22,6 +22,15 @@ export const updateMatchPayloadSchema = z.object({
   away_group_uuid: z.string().nullish(),
 });
 
+export const matchQueryParamsSchema = z.object({
+  page: z.string().transform((val) => Number.parseInt(val)).nullish(),
+  limit: z.string().transform((val) => Number.parseInt(val)).nullish(),
+  status: MatchStatusEnum.nullish(),
+  tournament_uuid: z.string().nullish(),
+  player: z.string().nullish(),
+  court: z.string().nullish(),
+});
+
 export const updateMultipleMatchesPayloadSchema = z.object({
   tournament_uuid: z.string(),
   matches: z.array(updateMatchPayloadSchema),
@@ -29,4 +38,4 @@ export const updateMultipleMatchesPayloadSchema = z.object({
 
 export type UpdateMatchPayload = z.infer<typeof updateMatchPayloadSchema>;
 export type UpdateMultipleMatchesPayload = z.infer<typeof updateMultipleMatchesPayloadSchema>;
-
+export type MatchQueryParams = z.infer<typeof matchQueryParamsSchema>

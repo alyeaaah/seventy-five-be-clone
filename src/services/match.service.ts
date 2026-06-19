@@ -11,6 +11,7 @@ import { MatchReferee } from "../entities/MatchReferee";
 import { playerDummy } from "../lib/fake.lib";
 import { groupResponseSchema, matchSchema } from "../schemas/tournament.schema";
 import { playerSchema } from "../schemas/player.schema";
+import { matchQueryParamsSchema } from "../schemas/match.schema";
 
 export class MatchService {
   async list(req: any, res: any) {
@@ -365,8 +366,12 @@ export class MatchService {
     const utilLib = Util.getInstance();
     const { tournament_uuid, player, status: statusParam } = req.query;
     try {
-      const page = Number.parseInt((req.query.page as string) || "1", 10);
-      const limit = Number.parseInt((req.query.limit as string) || "10", 10);
+      const validationResult = matchQueryParamsSchema.safeParse(req.query);
+      if (!!validationResult.error) {
+        throw new Error(validationResult.error.message + " "+ validationResult.error.issues.map((issue) => issue.message).join(", "));
+      }
+      const { page, limit, court } = validationResult.data;
+      
       const player_uuid = player as string;
       let statuses: MatchStatus[];
       if (statusParam) {
@@ -460,6 +465,12 @@ export class MatchService {
       } else {
         queryBuilder
           .orderBy("matches.time", "DESC");
+      }
+
+      // Apply court filter if provided
+      if (court) {
+        queryBuilder
+          .andWhere("matches.court_field_uuid = :court", { court });
       }
 
       const [data, totalRecords] = await queryBuilder.getManyAndCount();

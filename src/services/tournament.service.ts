@@ -622,26 +622,27 @@ export class TournamentService {
     
     await AppDataSource.transaction(async (tm) => {
       
-      // Create team entries for both players
-      const playerTeams: PlayerTeam[] = [];
-      
-      for (let i = 0; i < playerUuids.length; i++) {
-        const playerUuid = playerUuids[i];
-        const playerTeam = new PlayerTeam();
-        playerTeam.uuid = uuidv4();
-        playerTeam.player_uuid = playerUuid;
-        playerTeam.tournament_uuid = tournamentUuid;
-        playerTeam.team_uuid = createdTeamUuid;
-        playerTeam.status = status;
-        playerTeam.createdBy = 'admin'; // Indicate admin created this team
-        playerTeam.captain = i === 0; // First player is captain
-        playerTeams.push(playerTeam);
-      }
-
-      await tm.save(playerTeams);
-
       // directly create team record if status is approve/confirmed
       if (!tournament.draft_pick && (status === PTStatusEnum.APPROVED || status === PTStatusEnum.CONFIRMED)) {
+
+        // Create team entries for both players
+        const playerTeams: PlayerTeam[] = [];
+        
+        for (let i = 0; i < playerUuids.length; i++) {
+          const playerUuid = playerUuids[i];
+          const playerTeam = new PlayerTeam();
+          playerTeam.uuid = uuidv4();
+          playerTeam.player_uuid = playerUuid;
+          playerTeam.tournament_uuid = tournamentUuid;
+          playerTeam.team_uuid = createdTeamUuid;
+          playerTeam.status = status;
+          playerTeam.createdBy = 'admin'; // Indicate admin created this team
+          playerTeam.captain = i === 0; // First player is captain
+          playerTeams.push(playerTeam);
+        }
+
+        await tm.save(playerTeams);
+
         const teamRepo = tm.getRepository(Team);
         
         // Get current teams count for naming
@@ -696,6 +697,29 @@ export class TournamentService {
           team.createdBy = 'admin';
           await tm.save(team);
         }
+      }
+      else if (!!tournament.draft_pick) {
+        const dpRepo = tm.getRepository(DraftPick);
+        const dpData = await dpRepo.findOne({
+          where: {
+            tournament_uuid: tournamentUuid,
+            player_uuid: In(playerUuids),
+            deletedAt: IsNull()
+          }
+        });
+        if (dpData) {
+          throw new Error("One of player has already been added");
+        }
+        const newDpDatas: DraftPick[] = [];
+        for (const playerUuid of playerUuids) {
+          const dpData = new DraftPick();
+          dpData.tournament_uuid = tournamentUuid;
+          dpData.player_uuid = playerUuid;
+          dpData.status = status.toString() as DraftPickStatus;
+          dpData.attachment = "-";
+          newDpDatas.push(dpData);
+        }
+        await tm.save(newDpDatas);
       }
     });
 

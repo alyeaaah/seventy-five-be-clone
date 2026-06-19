@@ -64,6 +64,7 @@ export class TournamentParticipantService {
       // Format response data
       const participants = draftPicks.map(dp => ({
         ...dp,
+        id:dp.id,
         player: dp.player ? {
           uuid: dp.player.uuid,
           name: dp.player.name,
