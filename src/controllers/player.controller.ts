@@ -1055,7 +1055,9 @@ console.log("\n\n",phone,"\n\n");
                 }
               });
               if (otherExistingPick) {
-                existingPick.position = otherExistingPick;
+                existingPick.position = otherExistingPick+1;
+              } else {
+                existingPick.position = 1;
               }
             }
             // Create new draft pick
