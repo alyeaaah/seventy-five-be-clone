@@ -37,6 +37,9 @@ export class TournamentEvent {
   @Column({ type: "varchar", nullable: true })
   media_url: string | undefined;
 
+  @Column({ type: "varchar", nullable: true })
+  logo: string | undefined;
+
   @Column("text")
   description: string = "";
 

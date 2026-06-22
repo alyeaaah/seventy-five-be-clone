@@ -369,7 +369,7 @@ export class MatchService {
       if (!!validationResult.error) {
         throw new Error(validationResult.error.message + " "+ validationResult.error.issues.map((issue) => issue.message).join(", "));
       }
-      const { page, limit, courts, tournament_uuids } = validationResult.data;
+      const { page, limit, courts: courtParams, tournament_uuids } = validationResult.data;
       
       const player_uuid = player as string;
       let statuses: MatchStatus[];
@@ -387,7 +387,15 @@ export class MatchService {
       } else {
         statuses = status ? [status] : []; // default
       }
-
+      let courts:string[] = [];
+      if (Array.isArray(courtParams)) {
+        courts = courtParams as string[];
+      } else if (typeof courtParams === 'string') {
+        // Handle comma-separated statuses or single status
+        courts = courtParams.includes(',') 
+          ? (courtParams.split(',') as string[])
+          : [courtParams as string];
+      } 
       if (tournament_uuid) {
         
         const tRepo = AppDataSource.getRepository(Tournament);
@@ -483,7 +491,7 @@ export class MatchService {
       }
 
       // Apply court filter if provided
-      if (courts) {
+      if (courts?.length) {
         queryBuilder
           .andWhere("matches.court_field_uuid IN (:...courts)", { courts });
       }
