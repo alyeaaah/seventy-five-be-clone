@@ -10,6 +10,7 @@ import { TournamentSponsors } from "../entities/TournamentSponsors";
 import { TournamentGroup } from "../entities/TournamentGroups";
 import { TournamentService } from "../services/tournament.service";
 import { DraftPick } from "../entities/DraftPick";
+import { statusTournamentEventEnum, TournamentEvent } from "../entities/TournamentEvent";
 
 export default class TournamentController {
   constructor() {
@@ -317,12 +318,41 @@ export default class TournamentController {
     if (!status) return res.status(400).json({ message: "Status is required" });
     try {
       const tRepo = AppDataSource.getRepository(Tournament);
+      const teRepo = AppDataSource.getRepository(TournamentEvent);
       const data = await tRepo.findOneBy({ uuid, deletedAt: IsNull() });
-      if (!data) throw new Error(`Data not found`);
-      data.status = status;
-      data.updatedAt = new Date();
-      data.updatedBy = req.data?.uuid || undefined;
-      await tRepo.save(data);
+      const event = await teRepo.findOne({
+        where: {
+          uuid: uuid,
+          status: statusTournamentEventEnum.DRAFT
+        },
+        relations: {
+          tournaments: true
+        }
+      });
+      if (!data && !event) throw new Error(`Data not found`);
+      if (!!data && !event) { 
+        data.status = status;
+        data.updatedAt = new Date();
+        data.updatedBy = req.data?.uuid || undefined;
+        await tRepo.save(data);
+      }
+      else if (!!event && !data) {
+        await AppDataSource.transaction(async (em) => {
+          event.status = status;
+          event.updated_at = new Date();
+          event.updated_by = req.data?.uuid || undefined;
+          await em.save(event);
+          for (const tournament of event.tournaments || []) {
+            tournament.status = status;
+            tournament.updatedAt = new Date();
+            tournament.updatedBy = req.data?.uuid || undefined;
+            await em.save(tournament);
+          }
+        })
+      }
+      else {
+        throw new Error(`Data tournament or event not found`);
+      } 
       utilLib.loggingRes(req, { data, message: "Data updated successfully" });
       return res.json({ data, message: "Data updated successfully" });
     } catch (error: any) {
