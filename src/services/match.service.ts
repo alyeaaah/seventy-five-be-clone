@@ -349,7 +349,6 @@ export class MatchService {
           name: `${match.court_field?.court?.name} - ${match.court_field?.name}`,
         }: undefined,
       }));
-      console.log(matchHistories);
       
       const result = matchHistories.map((match) => matchSchema.parse(match));
       utilLib.loggingRes(req, { data: result, message: "Matches fetched successfully!" });
@@ -370,7 +369,7 @@ export class MatchService {
       if (!!validationResult.error) {
         throw new Error(validationResult.error.message + " "+ validationResult.error.issues.map((issue) => issue.message).join(", "));
       }
-      const { page, limit, court } = validationResult.data;
+      const { page, limit, courts, tournament_uuids } = validationResult.data;
       
       const player_uuid = player as string;
       let statuses: MatchStatus[];
@@ -394,7 +393,19 @@ export class MatchService {
         const tRepo = AppDataSource.getRepository(Tournament);
         const dataExists = await tRepo.findOneBy({
           uuid: tournament_uuid,
-          deletedBy: undefined,
+          deletedBy: IsNull(),
+        });
+        if (!dataExists) {
+          throw new Error("Tournament not found!");
+        }
+      }
+
+      if (tournament_uuids) {
+        
+        const tRepo = AppDataSource.getRepository(Tournament);
+        const dataExists = await tRepo.findOneBy({
+          uuid: In(tournament_uuids),
+          deletedBy: IsNull(),
         });
         if (!dataExists) {
           throw new Error("Tournament not found!");
@@ -446,6 +457,10 @@ export class MatchService {
         queryBuilder
           .andWhere("matches.tournament_uuid IS NULL OR matches.tournament_uuid = ''");
       }
+      if (tournament_uuids && tournament_uuids.length > 0) {
+        queryBuilder
+          .andWhere("matches.tournament_uuid IN (:...tournament_uuids)", { tournament_uuids });
+      }
       if (statuses && statuses.length > 0) {
         if (statuses.length == 1 && statuses[0] == MatchStatus.ONGOING) {
           queryBuilder
@@ -468,9 +483,9 @@ export class MatchService {
       }
 
       // Apply court filter if provided
-      if (court) {
+      if (courts) {
         queryBuilder
-          .andWhere("matches.court_field_uuid = :court", { court });
+          .andWhere("matches.court_field_uuid IN (:...courts)", { courts });
       }
 
       const [data, totalRecords] = await queryBuilder.getManyAndCount();

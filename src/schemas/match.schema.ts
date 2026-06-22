@@ -25,10 +25,11 @@ export const updateMatchPayloadSchema = z.object({
 export const matchQueryParamsSchema = z.object({
   page: z.string().transform((val) => Number.parseInt(val)).nullish(),
   limit: z.string().transform((val) => Number.parseInt(val)).nullish(),
-  status: MatchStatusEnum.nullish(),
+  status: z.array(MatchStatusEnum).nullish().or(MatchStatusEnum.nullish()).nullish(),
   tournament_uuid: z.string().nullish(),
+  tournament_uuids: z.array(z.string()).nullish(),
   player: z.string().nullish(),
-  court: z.string().nullish(),
+  courts: z.string().nullish(),
 });
 
 export const updateMultipleMatchesPayloadSchema = z.object({
