@@ -12,6 +12,7 @@ import { playerDummy } from "../lib/fake.lib";
 import { groupResponseSchema, matchSchema } from "../schemas/tournament.schema";
 import { playerSchema } from "../schemas/player.schema";
 import { matchQueryParamsSchema } from "../schemas/match.schema";
+import { MatchScoreService } from "./match-score.service";
 
 export class MatchService {
   async list(req: any, res: any) {
@@ -471,6 +472,9 @@ export class MatchService {
       }
       if (statuses && statuses.length > 0) {
         if (statuses.length == 1 && statuses[0] == MatchStatus.ONGOING) {
+
+          const matchScoreService = new MatchScoreService();
+           matchScoreService.getAllOngoingMatchScores();
           queryBuilder
             .andWhere("matches.winner_team_uuid = ''");
         }
