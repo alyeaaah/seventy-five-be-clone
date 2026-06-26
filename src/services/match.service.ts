@@ -958,6 +958,8 @@ export class MatchService {
         query = query.andWhere('matchReferee.player_uuid = :player_uuid', { player_uuid });
         query.andWhere('match.status != :status', { status: MatchStatus.ENDED });
       }
+      // order by match time
+      query = query.orderBy('match.time', 'ASC');
 
       const matchReferees = await query.getMany();
 
