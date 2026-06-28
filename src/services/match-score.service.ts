@@ -808,6 +808,7 @@ export class MatchScoreService {
     try {
       const matchesRepo = AppDataSource.getRepository(Matches);
       const gameRepo = AppDataSource.getRepository(Game);
+        webSocketService.broadcastMatchScores([]);
       
       // Fetch all matches with ONGOING status
       const ongoingMatches = await matchesRepo.find({
